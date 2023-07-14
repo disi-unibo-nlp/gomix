@@ -8,6 +8,7 @@ from Net import Net
 from torch_geometric.data import Data as GeometricData
 from torch_geometric.loader import NeighborLoader
 from tqdm import tqdm
+import random
 
 PPI_FILE_PATH = '../../data/processed/CAFA3_training_data/protein_representation/STRING_v11.0_network.json'
 PROT_ANNOTATIONS_FILE_PATH = '../../data/processed/CAFA3_training_data/protein_propagated_annotations.json'
@@ -16,9 +17,12 @@ device = torch.device('mps')
 
 
 def main():
+    random.seed(0)
+    torch.manual_seed(0)
+
     graph, num_classes = _build_or_load_graph()
     print('Protein graph:', graph)
-    print(f'It contains {graph.num_nodes} nodes (proteins). Average number of edges per node: {_get_average_degree(graph)}')
+    print(f'It contains {graph.num_nodes} nodes (proteins). Average edges per node: {_get_average_degree(graph):.2f}')
 
     train_mask = _make_train_mask(graph.num_nodes, proportion_true=0.8)
     train_loader = NeighborLoader(graph, num_neighbors=[10, 5], batch_size=128, input_nodes=train_mask)
