@@ -1,5 +1,6 @@
 import pickle
 import os
+import numpy as np
 import torch
 import torch.optim as optim
 from ProteinGraphBuilder import ProteinGraphBuilder
@@ -63,9 +64,17 @@ def main():
 
         test_loss, performances_by_threshold = _evaluate(model, test_loader, loss_fn)
         print(f'Epoch {epoch:02d}, Test Loss: {test_loss:.4f}')
+
+        f_max = 0
+        opt_threshold = 0
         for threshold, (precision, recall) in performances_by_threshold.items():
-            f1_score = 2 * precision * recall / (precision + recall)
-            print(f'[{epoch:02d}, test,t={threshold}] f1_score: {f1_score:.4f} (precision: {precision:.4f}, recall: {recall:.4f})')
+            if precision + recall > 0:  # Avoid division by zero
+                f1_score = 2 * precision * recall / (precision + recall)
+                if f1_score > f_max:
+                    f_max = f1_score
+                    opt_threshold = threshold
+        print(f'[{epoch:02d}, test,t={opt_threshold}] F_max: {f_max:.4f} (at optimal threshold)')
+
         print('——')
         scheduler.step()
 
@@ -127,7 +136,7 @@ def _evaluate(model, test_loader, loss_fn: torch.nn.Module):
 
     performances_by_threshold = {}
 
-    for threshold in [0.1, 0.25, 0.5]:
+    for threshold in np.round(np.arange(0.05, 0.75, 0.05), 2):
         polarized_preds = (all_preds >= threshold).float()
         true_positives = (polarized_preds * all_targets).sum(dim=1)
         false_positives = (polarized_preds * (1 - all_targets)).sum(dim=1)
