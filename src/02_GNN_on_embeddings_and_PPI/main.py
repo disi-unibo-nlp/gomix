@@ -18,7 +18,7 @@ device = torch.device('mps')
 def main():
     graph, num_classes = _build_or_load_graph()
     print('Protein graph:', graph)
-    print(f'It contains {graph.num_nodes} nodes (proteins).')
+    print(f'It contains {graph.num_nodes} nodes (proteins). Average number of edges per node: {_get_average_degree(graph)}')
 
     train_mask = _make_train_mask(graph.num_nodes, proportion_true=0.8)
     train_loader = NeighborLoader(graph, num_neighbors=[10, 5], batch_size=128, input_nodes=train_mask)
@@ -28,7 +28,7 @@ def main():
 
     print('Train-test split: {} - {}'.format(train_mask.sum(), test_mask.sum()))
 
-    print(f'Using device: {device}')
+    print(f'\nUsing device: {device}')
     model = Net(num_classes=num_classes).to(device)
     optimizer = optim.Adam(model.parameters(), lr=4e-3)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=4, gamma=0.5)
@@ -75,7 +75,7 @@ def main():
                 if f1_score > f_max:
                     f_max = f1_score
                     opt_threshold = threshold
-        print(f'[{epoch:02d}, test,t={opt_threshold}] F_max: {f_max:.4f} (at optimal threshold)')
+        print(f'[{epoch:02d}, test] F_max: {f_max:.4f} (at optimal threshold t={opt_threshold})')
 
         if f_max > best_test_f_max:
             best_test_f_max = f_max
@@ -91,7 +91,7 @@ def main():
 def _build_or_load_graph():
     pickle_file_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../data/cache/experiment03', 'protein_graph.pickle')
     if os.path.exists(pickle_file_path):
-        print("Loading graph from pickle file.")
+        print("Loading graph from pickle cache file.")
         with open(pickle_file_path, 'rb') as file:
             return pickle.load(file)
 
@@ -106,6 +106,13 @@ def _build_or_load_graph():
         pickle.dump(result, file)
 
     return result
+
+
+def _get_average_degree(data: GeometricData):
+    num_edges = data.edge_index.shape[1] / 2
+    num_nodes = data.x.shape[0]
+    average_degree = num_edges / num_nodes
+    return average_degree
 
 
 def _make_train_mask(total: int, proportion_true=0.8):
@@ -145,7 +152,7 @@ def _evaluate(model, test_loader, loss_fn: torch.nn.Module):
 
     performances_by_threshold = {}
 
-    for threshold in np.round(np.arange(0.05, 0.75, 0.05), 2):
+    for threshold in np.round(np.arange(0.01, 0.6, 0.01), 2):
         polarized_preds = (all_preds >= threshold).float()
         true_positives = (polarized_preds * all_targets).sum(dim=1)
         false_positives = (polarized_preds * (1 - all_targets)).sum(dim=1)
