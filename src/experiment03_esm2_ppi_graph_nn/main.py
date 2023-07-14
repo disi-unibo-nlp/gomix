@@ -35,8 +35,10 @@ def main():
     loss_fn = torch.nn.BCEWithLogitsLoss()
 
     print('Training...')
-    EPOCHS = 20
-    for epoch in range(1, EPOCHS + 1):
+    MAX_EPOCHS = 20
+    best_test_f_max = -np.inf
+    best_epoch = 0
+    for epoch in range(1, MAX_EPOCHS + 1):
         print(f"Epoch {epoch}: lr={optimizer.param_groups[0]['lr']}")
         model.train()
 
@@ -74,6 +76,13 @@ def main():
                     f_max = f1_score
                     opt_threshold = threshold
         print(f'[{epoch:02d}, test,t={opt_threshold}] F_max: {f_max:.4f} (at optimal threshold)')
+
+        if f_max > best_test_f_max:
+            best_test_f_max = f_max
+            best_epoch = epoch
+        elif epoch - best_epoch > 3:  # Early stopping.
+            print(f'Early stopping. Best F_max score on test set was {best_test_f_max:.4f} at epoch {best_epoch}')
+            break
 
         print('——')
         scheduler.step()
