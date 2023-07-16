@@ -23,6 +23,8 @@ def main():
     graph, num_classes = _build_or_load_graph()
     print('Protein graph:', graph)
     print(f'It contains {graph.num_nodes} nodes (proteins). Average edges per node: {_get_average_degree(graph):.2f}')
+    k = 1
+    print(f'Percentage of nodes with {k} edges or less: {_get_percentage_nodes_lte_k(graph, k=k):.2f}%')
 
     train_mask = _make_train_mask(graph.num_nodes, proportion_true=0.8)
     train_loader = NeighborLoader(graph, num_neighbors=[10, 5], batch_size=128, input_nodes=train_mask)
@@ -117,6 +119,21 @@ def _get_average_degree(data: GeometricData):
     num_nodes = data.x.shape[0]
     average_degree = num_edges / num_nodes
     return average_degree
+
+
+def _get_percentage_nodes_lte_k(data: GeometricData, k: int):
+    # Constructing a set of unique edges considering the graph as undirected
+    edge_set = set(tuple(sorted(edge)) for edge in data.edge_index.t().tolist())
+
+    # Counting the degree for each node
+    degrees = torch.zeros(data.x.shape[0], dtype=torch.long)
+    for edge in edge_set:
+        degrees[edge[0]] += 1
+        degrees[edge[1]] += 1
+
+    num_nodes_lte_k = (degrees <= k).sum().item()
+    perc_nodes_less_than_k = num_nodes_lte_k / len(degrees) * 100
+    return perc_nodes_less_than_k
 
 
 def _make_train_mask(total: int, proportion_true=0.8):
