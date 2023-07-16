@@ -7,9 +7,9 @@ from torch_geometric.data import Data as GeometricData
 class Net(torch.nn.Module):
     def __init__(self, num_classes: int):
         super().__init__()
-        self.conv1 = GATv2Conv(2560, 1000)
-        self.batchnorm1 = BatchNorm(1000)
-        self.conv2 = GATv2Conv(1000, num_classes)
+        self.conv1 = GATv2Conv(2560, 5000)
+        self.batchnorm1 = BatchNorm(5000)
+        self.conv2 = GATv2Conv(5000, num_classes)
 
     def forward(self, data: GeometricData):
         x, edge_index = data.x, data.edge_index

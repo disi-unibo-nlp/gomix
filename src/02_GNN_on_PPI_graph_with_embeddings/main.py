@@ -27,10 +27,10 @@ def main():
     print(f'Percentage of nodes with {k} edges or less: {_get_percentage_nodes_lte_k(graph, k=k):.2f}%')
 
     train_mask = _make_train_mask(graph.num_nodes, proportion_true=0.8)
-    train_loader = NeighborLoader(graph, num_neighbors=[10, 5], batch_size=128, input_nodes=train_mask)
+    train_loader = NeighborLoader(graph, num_neighbors=[10, 5], batch_size=64, input_nodes=train_mask)
 
     test_mask = ~train_mask
-    test_loader = NeighborLoader(graph, num_neighbors=[10, 5], batch_size=128, input_nodes=test_mask)
+    test_loader = NeighborLoader(graph, num_neighbors=[10, 5], batch_size=64, input_nodes=test_mask)
 
     print('Train-test split: {} - {}'.format(train_mask.sum(), test_mask.sum()))
 
@@ -95,7 +95,7 @@ def main():
 
 
 def _build_or_load_graph():
-    pickle_file_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../data/cache/experiment03', 'protein_graph.pickle')
+    pickle_file_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../data/cache/experiment02', 'protein_graph.pickle')
     if os.path.exists(pickle_file_path):
         print("Loading graph from pickle cache file.")
         with open(pickle_file_path, 'rb') as file:
