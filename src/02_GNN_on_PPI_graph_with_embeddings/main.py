@@ -13,7 +13,7 @@ import random
 PPI_FILE_PATH = '../../data/processed/CAFA3_training_data/protein_representation/STRING_v11.0_network.json'
 PROT_ANNOTATIONS_FILE_PATH = '../../data/processed/CAFA3_training_data/protein_propagated_annotations.json'
 
-device = torch.device('mps')
+device = torch.device('cuda')
 
 
 def main():
@@ -22,9 +22,7 @@ def main():
 
     graph, num_classes = _build_or_load_graph()
     print('Protein graph:', graph)
-    print(f'It contains {graph.num_nodes} nodes (proteins). Average edges per node: {_get_average_degree(graph):.2f}')
-    k = 1
-    print(f'Percentage of nodes with {k} edges or less: {_get_percentage_nodes_lte_k(graph, k=k):.2f}%')
+    print(f'It contains {graph.num_nodes} nodes (proteins). Average edges per node: {_get_average_degree(graph):.2f}. {_get_percentage_nodes_lte_k(graph, k=0):.2f}% have 0 edges.')
 
     train_mask = _make_train_mask(graph.num_nodes, proportion_true=0.8)
     train_loader = NeighborLoader(graph, num_neighbors=[10, 5], batch_size=64, input_nodes=train_mask)
@@ -37,11 +35,11 @@ def main():
     print(f'\nUsing device: {device}')
     model = Net(num_classes=num_classes).to(device)
     optimizer = optim.Adam(model.parameters(), lr=4e-3)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=4, gamma=0.5)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=4, gamma=0.62)
     loss_fn = torch.nn.BCEWithLogitsLoss()
 
     print('Training...')
-    MAX_EPOCHS = 20
+    MAX_EPOCHS = 80  # Can be large (we have early stopping)
     best_test_f_max = -np.inf
     best_epoch = 0
     for epoch in range(1, MAX_EPOCHS + 1):

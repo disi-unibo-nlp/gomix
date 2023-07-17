@@ -1,6 +1,6 @@
 # Protein function prediction for CAFA challenge
 
-## General overview
+## Overview
 
 **ESM2** is a protein language model by Facebook. It can embed proteins (it first embeds amino acids, then you usually take the average between them and you get the protein embedding).
 
@@ -50,6 +50,7 @@ _Write the results here._
 
 ### Ways to improve
 
+- Use text embeddings of protein-associated documents as input, a bit like [NetGO 2.0](https://academic.oup.com/nar/article/49/W1/W469/6285266#267025483) did (see "LR-text").
 - Use [SIGN](https://arxiv.org/pdf/2004.11198.pdf) or [GraphSAINT](https://arxiv.org/abs/1907.04931) instead of the current GCN.
 - Combine the current solution with [Proteinfer](https://google-research.github.io/proteinfer/) using ensemble learning such as stacking or Mixture of Experts.
 - Another piece of information that could be added as input is the 3D structure of the proteins, coming from DBs like the Protein Data Bank (PDB). Here is a Nature paper that uses it to predict protein function.
@@ -57,10 +58,21 @@ _Write the results here._
 - Include other PPI networks as input.
 - Add to the input also the old protein-GO term links (with a specific edge type).
 
-### Differential analysis
+## Differential analysis
 
 We could include in the final paper the differential analysis of various architectural decisions. Here are some of the dimensions that could be tested:
+- FC on protein embeddings vs GCN with PPI edges
+- ESM2 3B vs 15B
 - GAT (Graph Attention Network) vs SAGEConv vs GraphSAINT vs SIGN
 - different PPI nets (provided that we can get to improve the performance based on the information contained)
 - different neighbor sampling thresholds
 - different number of neurons or layers
+- ablation of weak learners in the ensemble
+
+## Contributions of this research
+
+- Evaluating how informative ESM2 protein embeddings are for function prediction.
+- Comparing the different types of ESM2 embeddings.
+- Evaluating how informative PPI networks are for function prediction, on top of the embeddings (ablation study).
+- \[?\] Evaluating how informative protein 3D structures are for function prediction (ablation study).
+- Evaluating which kind of GNN is best for this task.
