@@ -76,3 +76,13 @@ We could include in the final paper the differential analysis of various archite
 - Evaluating how informative PPI networks are for function prediction, on top of the embeddings (ablation study).
 - \[?\] Evaluating how informative protein 3D structures are for function prediction (ablation study).
 - Evaluating which kind of GNN is best for this task.
+
+## Relevant papers
+
+**CAFA:**
+- [CAFA1](http://www.ncbi.nlm.nih.gov/pubmed/23353650)
+- [CAFA2](http://www.ncbi.nlm.nih.gov/pubmed/27604469)
+- [CAFA3](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1835-8)
+
+**State-of-the-art:**
+- [NetGO 3.0](https://www.sciencedirect.com/science/article/pii/S1672022923000669)
