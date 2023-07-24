@@ -107,7 +107,7 @@ def _make_go_term_vocabulary(annotations):
 
 def _evaluate_for_validation(model, dataloader, loss_fn):
     model.eval()
-    loss = 0.0
+    running_loss = 0.0
     all_preds = []
     all_targets = []
     with torch.no_grad():
@@ -115,11 +115,10 @@ def _evaluate_for_validation(model, dataloader, loss_fn):
             prot_embeddings = prot_embeddings.to(device)
             targets = targets.to(device)
             outputs = model(prot_embeddings)
-            loss = loss_fn(outputs, targets)
-            loss += loss.item()
+            running_loss += loss_fn(outputs, targets).item()
             all_preds.append(torch.sigmoid(outputs))
             all_targets.append(targets)
-    loss /= len(dataloader)
+    running_loss /= len(dataloader)
     all_preds = torch.cat(all_preds)
     all_targets = torch.cat(all_targets)
 
@@ -135,7 +134,7 @@ def _evaluate_for_validation(model, dataloader, loss_fn):
 
         performances_by_threshold[threshold] = (precision, recall)
 
-    return loss, performances_by_threshold
+    return running_loss, performances_by_threshold
 
 
 def _evaute_for_testing_with_official_criteria(model, go_term_to_index: dict):
