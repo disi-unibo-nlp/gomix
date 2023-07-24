@@ -41,7 +41,7 @@ def main():
 
     best_val_f_max = -np.inf
     best_epoch = 0
-    for epoch in range(1):  # 50
+    for epoch in range(80):
         print(f"Epoch {epoch+1}: Learning rate = {optimizer.param_groups[0]['lr']}")
         model.train()
         train_loss = 0.0
