@@ -10,8 +10,9 @@ from torch_geometric.loader import NeighborLoader
 from tqdm import tqdm
 import random
 
-PPI_FILE_PATH = '../../data/processed/CAFA3_training_data/protein_representation/STRING_v11.0_network.json'
-PROT_ANNOTATIONS_FILE_PATH = '../../data/processed/CAFA3_training_data/protein_propagated_annotations.json'
+THIS_DIR = os.path.dirname(os.path.realpath(__file__))
+PPI_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/processed/CAFA3_training_data/protein_representation/STRING_v11.0_network.json')
+PROT_ANNOTATIONS_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/processed/CAFA3_training_data/protein_propagated_annotations.json')
 
 device = torch.device('cuda')
 
@@ -93,7 +94,7 @@ def main():
 
 
 def _build_or_load_graph():
-    pickle_file_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../data/cache/experiment02', 'protein_graph.pickle')
+    pickle_file_path = os.path.join(THIS_DIR, '../../../../data/temp_cache/experiment02', 'protein_graph.pickle')
     if os.path.exists(pickle_file_path):
         print("Loading graph from pickle cache file.")
         with open(pickle_file_path, 'rb') as file:

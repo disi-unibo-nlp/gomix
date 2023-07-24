@@ -1,7 +1,4 @@
-from typing import Tuple, Generator
-
-
-def parse_fasta_file(fasta_file: str) -> Generator[Tuple[str, str], None, None]:
+def parse_fasta_file(fasta_file: str):
     with open(fasta_file) as f:
         seq_id = None
         seq = ""

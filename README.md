@@ -84,5 +84,5 @@ We could include in the final paper the differential analysis of various archite
 - [CAFA2](http://www.ncbi.nlm.nih.gov/pubmed/27604469)
 - [CAFA3](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1835-8)
 
-**State-of-the-art:**
+**State-of-the-art for protein function prediction:**
 - [NetGO 3.0](https://www.sciencedirect.com/science/article/pii/S1672022923000669)

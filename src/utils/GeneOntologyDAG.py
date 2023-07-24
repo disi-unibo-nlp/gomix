@@ -2,8 +2,8 @@ from goatools.obo_parser import GODag
 
 
 class GeneOntologyDAG:
-    def __init__(self):
-        self.go_dag = GODag('./data/raw/GO/go-basic.obo', 'relationship')
+    def __init__(self, go_file_path: str):
+        self.go_dag = GODag(go_file_path, 'relationship')
 
     def is_obsolete(self, go_id: str) -> bool:
         return go_id not in self.go_dag
