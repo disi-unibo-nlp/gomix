@@ -2,9 +2,7 @@
 
 import argparse
 import pathlib
-
 import torch
-
 from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, MSATransformer
 
 
