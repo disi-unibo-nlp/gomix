@@ -9,7 +9,7 @@ def process_pickle_files(input_dir, output_dir):
         if file.endswith(".pkl"):
             df = pd.read_pickle(os.path.join(input_dir, file))
             for idx, row in df.iterrows():
-                protein_id = row['accessions'].split(';')[0]  # taking the first id
+                protein_id = row['proteins']
                 sequence = row['sequences']
                 all_prot_id_to_seq[protein_id] = sequence
 

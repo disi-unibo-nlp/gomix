@@ -5,14 +5,14 @@ from tqdm import tqdm
 # Code adapted from https://github.com/bio-ontology-research-group/deepgoplus
 
 ONT_ROOTS = {
-    'cc': 'GO:0005575',
     'mf': 'GO:0003674',
-    'bp': 'GO:0008150'
+    'bp': 'GO:0008150',
+    'cc': 'GO:0005575'
 }
 NAMESPACES = {
-    'cc': 'cellular_component',
     'mf': 'molecular_function',
-    'bp': 'biological_process'
+    'bp': 'biological_process',
+    'cc': 'cellular_component'
 }
 
 

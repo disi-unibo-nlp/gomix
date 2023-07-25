@@ -23,8 +23,7 @@ def main(input_dir, output_dir):
         df['annotations'] = df['annotations'].apply(lambda terms: [term for term in terms if not gene_ontology.is_obsolete(term)])
         df = df[df['annotations'].apply(lambda terms: len(terms) > 0)]
 
-        # Extract the protein_id from the 'accessions' column as the key for data_dict
-        df['protein_id'] = df['accessions'].apply(lambda x: x.split(';')[0])
+        df['protein_id'] = df['proteins']  # Use protein name as ID.
 
         data_dict = dict(zip(df["protein_id"], df["annotations"]))
 
