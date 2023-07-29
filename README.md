@@ -52,7 +52,8 @@ _Write the results here._
 
 - Use text embeddings of protein-associated documents as input, a bit like [NetGO 2.0](https://academic.oup.com/nar/article/49/W1/W469/6285266#267025483) did (see "LR-text").
 - Use [SIGN](https://arxiv.org/pdf/2004.11198.pdf) or [GraphSAINT](https://arxiv.org/abs/1907.04931) instead of the current GCN.
-- Combine the current solution with [Proteinfer](https://google-research.github.io/proteinfer/) using ensemble learning such as stacking or Mixture of Experts.
+- Improve the current GCN with new methods such as [over-squashing prevention](https://arxiv.org/abs/2306.03589) and [half-hop](https://www.linkedin.com/posts/petarvelickovic_icml2023-activity-7090395512402534401-TGxD/?utm_source=share&utm_medium=member_desktop).
+- Combine the current solutions using ensemble learning such as Stacking or Mixture of Experts. You may also add [Proteinfer](https://google-research.github.io/proteinfer/) to the ensemble.
 - Another piece of information that could be added as input is the 3D structure of the proteins, coming from DBs like the Protein Data Bank (PDB). Here is a Nature paper that uses it to predict protein function.
 - Add as input the 3D structure of the proteins, coming from DBs like the Protein Data Bank (PDB). [Here](https://www.nature.com/articles/s41467-021-23303-9) is a Nature paper that uses it to predict protein function.
 - Include other PPI networks as input.
