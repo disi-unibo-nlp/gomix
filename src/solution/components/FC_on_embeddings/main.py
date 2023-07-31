@@ -17,12 +17,12 @@ torch.manual_seed(0)
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 PROPAGATED_TRAIN_ANNOTS_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/propagated_annotations/train.json')
 OFFICIAL_TEST_ANNOTS_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/annotations/test.json')
-ALL_PROTEIN_EMBEDDINGS_DIR = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/all_protein_embeddings/esm2_t36_3B_UR50D')
+ALL_PROTEIN_EMBEDDINGS_DIR = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/all_protein_embeddings/esm2_t48_15B_UR50D')
 GENE_ONTOLOGY_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/raw/task_datasets/2016/go.obo')
 
 device = torch.device('cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu'))
 
-PROT_EMBEDDING_SIZE = 2560  # Number of elements in a single protein embedding vector
+PROT_EMBEDDING_SIZE = 5120  # Number of elements in a single protein embedding vector
 
 
 def main():
@@ -83,7 +83,7 @@ def main():
         scheduler.step()
 
     print('Training finished. Let\'s now evaluate on test set (with the official criteria).')
-    _evaute_for_testing_with_official_criteria(model, go_term_to_index=dataset.go_term_to_index)
+    _evaluate_for_testing_with_official_criteria(model, go_term_to_index=dataset.go_term_to_index)
 
 
 def _make_training_dataset():
@@ -137,7 +137,7 @@ def _evaluate_for_validation(model, dataloader, loss_fn):
     return running_loss, performances_by_threshold
 
 
-def _evaute_for_testing_with_official_criteria(model, go_term_to_index: dict):
+def _evaluate_for_testing_with_official_criteria(model, go_term_to_index: dict):
     index_to_go_term = {v: k for k, v in go_term_to_index.items()}
 
     with open(OFFICIAL_TEST_ANNOTS_FILE_PATH, 'r') as f:
