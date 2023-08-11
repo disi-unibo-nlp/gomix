@@ -7,10 +7,13 @@ class DiamondScoreLearner:
         self._diamond_scores = self._read_diamond_scores(diamond_scores_file_path)
 
     def predict(self, prot_id) -> dict:
-        if prot_id not in self._diamond_scores:
+        if prot_id in self._diamond_scores:
+            similar_proteins = self._diamond_scores[prot_id]
+        else:
             return {}
 
-        similar_proteins = self._diamond_scores[prot_id]
+        # Keep only the similar proteins present training annotations.
+        similar_proteins = {sim_prot_id: score for sim_prot_id, score in similar_proteins.items() if sim_prot_id in self._train_annotations}
 
         go_terms = set()
         total_score = 0.0

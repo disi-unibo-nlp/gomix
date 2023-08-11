@@ -1,6 +1,5 @@
 from collections import deque, Counter
 import math
-from tqdm import tqdm
 
 # Code adapted from https://github.com/bio-ontology-research-group/deepgoplus
 
