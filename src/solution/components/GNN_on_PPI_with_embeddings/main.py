@@ -4,8 +4,6 @@ import numpy as np
 from collections import defaultdict
 import torch
 import torch.optim as optim
-from ProteinGraphBuilder import ProteinGraphBuilder
-from Net import Net
 from torch_geometric.data import Data as GeometricData
 from torch_geometric.loader import NeighborLoader
 from tqdm import tqdm
@@ -15,6 +13,8 @@ from typing import List
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parents[4]))
+from src.solution.components.GNN_on_PPI_with_embeddings.ProteinGraphBuilder import ProteinGraphBuilder
+from src.solution.components.GNN_on_PPI_with_embeddings.Net import Net
 from src.utils.predictions_evaluation.evaluate import evaluate_with_deepgoplus_method
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -36,6 +36,45 @@ def main():
     print('Protein graph:', graph)
     print(f'It contains {graph.num_nodes} nodes (proteins). Average edges per node: {_get_average_degree(graph):.2f}. {_get_percentage_nodes_lte_k(graph, k=0):.2f}% have 0 edges.')
 
+    model = make_and_train_model_on(graph=graph, graph_ctx=graph_ctx)
+    print('Training finished. Let\'s now evaluate on test set (with the official criteria).')
+
+    _evaluate_for_testing_with_official_criteria(model, graph, graph_ctx)
+
+
+def _build_or_load_whole_graph():
+    pickle_file_path = os.path.join(THIS_DIR, '../../../../data/temp_cache/GNN_on_PPI_with_embeddings', 'all_proteins_ppi_graph.pickle')
+    if os.path.exists(pickle_file_path):
+        print("Loading graph from pickle cache file.")
+        with open(pickle_file_path, 'rb') as file:
+            return pickle.load(file)
+
+    with open(TRAIN_ANNOTATIONS_FILE_PATH, 'r') as f:
+        train_annotations = json.load(f)
+
+    result = build_whole_graph_from_scratch(train_annotations)
+
+    with open(pickle_file_path, 'wb') as file:
+        pickle.dump(result, file)
+
+    return result
+
+
+def build_whole_graph_from_scratch(train_annotations: dict) -> tuple:
+    # Note: the nodes in PPI file are not only the proteins in train+val set but also those in test set.
+    graph_builder = ProteinGraphBuilder(ppi_file_path=PPI_FILE_PATH)
+    graph_builder.set_targets(train_annotations)
+    graph: GeometricData = graph_builder.build()
+    graph.validate(raise_on_error=True)
+
+    graph_ctx = {
+        'prot_id_to_node_idx': graph_builder.prot_id_to_node_idx,
+        'go_term_to_class_idx': graph_builder.go_term_to_class_idx,
+    }
+    return graph, graph_ctx
+
+
+def make_and_train_model_on(graph: GeometricData, graph_ctx: dict) -> Net:
     train_mask, val_mask = _make_train_val_masks(graph, graph_ctx)
     train_loader = NeighborLoader(graph, num_neighbors=[8, 4], batch_size=64, input_nodes=train_mask)
     val_loader = NeighborLoader(graph, num_neighbors=[8, 4], batch_size=64, input_nodes=val_mask)
@@ -99,33 +138,33 @@ def main():
 
         print('——')
         scheduler.step()
-    print('Training finished.')
 
-    _evaluate_for_testing_with_official_criteria(model, graph, graph_ctx)
+    return model
 
 
-def _build_or_load_whole_graph():
-    pickle_file_path = os.path.join(THIS_DIR, '../../../../data/temp_cache/GNN_on_PPI_with_embeddings', 'all_proteins_ppi_graph.pickle')
-    if os.path.exists(pickle_file_path):
-        print("Loading graph from pickle cache file.")
-        with open(pickle_file_path, 'rb') as file:
-            return pickle.load(file)
+@torch.no_grad()
+def predict_and_transform_predictions_to_dict(model, prot_ids: List[str], graph: GeometricData, graph_ctx: dict) -> dict:
+    node_idx_to_prot_id = {node_idx: prot_id for prot_id, node_idx in graph_ctx['prot_id_to_node_idx'].items()}
+    class_idx_to_go_term = {class_idx: go_term for go_term, class_idx in graph_ctx['go_term_to_class_idx'].items()}
 
-    # The nodes are not only the ones in train/val set but also those in test set.
-    graph_builder = ProteinGraphBuilder(ppi_file_path=PPI_FILE_PATH)
-    graph_builder.set_targets(TRAIN_ANNOTATIONS_FILE_PATH)
-    graph: GeometricData = graph_builder.build()
-    graph.validate(raise_on_error=True)
+    mask = _make_graph_mask_with_prot_ids(prot_ids, graph, graph_ctx)
+    if mask.sum() != len(prot_ids):
+        print(f'Note: the test graph mask has {mask.sum()} nodes, while the number of test proteins was {len(prot_ids)}.')
+    loader = NeighborLoader(graph, num_neighbors=[8, 4], batch_size=64, input_nodes=mask)
 
-    graph_ctx = {
-        'prot_id_to_node_idx': graph_builder.prot_id_to_node_idx,
-        'go_term_to_class_idx': graph_builder.go_term_to_class_idx,
-    }
-    result = (graph, graph_ctx)
+    model.eval()
+    all_predictions = defaultdict(list)
+    for batch in loader:
+        batch.to(device)
+        preds = model.predict(batch)[:batch.batch_size]
+        top_scores, top_indices = torch.topk(preds, 200)  # Get the top k scores along with their indices
 
-    with open(pickle_file_path, 'wb') as file:
-        pickle.dump(result, file)
-    return result
+        batch_node_indices = batch.n_id[:batch.batch_size]
+        batch_prot_ids = [node_idx_to_prot_id[idx.item()] for idx in batch_node_indices]
+        for prot_id, scores, class_indices in zip(batch_prot_ids, top_scores, top_indices):
+            all_predictions[prot_id] = [(class_idx_to_go_term[class_idx.item()], score.item()) for score, class_idx in zip(scores, class_indices)]
+
+    return all_predictions
 
 
 def _get_average_degree(data: GeometricData):
@@ -219,38 +258,13 @@ def _evaluate_for_testing_with_official_criteria(model: torch.nn.Module, graph: 
         test_annotations = json.load(f)
     test_prot_ids = list(test_annotations.keys())
 
-    predictions = _predict_and_transform_predictions_to_dict(model, test_prot_ids, graph, graph_ctx)
+    predictions = predict_and_transform_predictions_to_dict(model, test_prot_ids, graph, graph_ctx)
 
     evaluate_with_deepgoplus_method(
         gene_ontology_file_path=GENE_ONTOLOGY_FILE_PATH,
         predictions=predictions,
         ground_truth=test_annotations
     )
-
-
-@torch.no_grad()
-def _predict_and_transform_predictions_to_dict(model, prot_ids: List[str], graph: GeometricData, graph_ctx: dict) -> dict:
-    node_idx_to_prot_id = {node_idx: prot_id for prot_id, node_idx in graph_ctx['prot_id_to_node_idx'].items()}
-    class_idx_to_go_term = {class_idx: go_term for go_term, class_idx in graph_ctx['go_term_to_class_idx'].items()}
-
-    mask = _make_graph_mask_with_prot_ids(prot_ids, graph, graph_ctx)
-    if mask.sum() != len(prot_ids):
-        print(f'Note: the test graph mask has {mask.sum()} nodes, while the number of test proteins was {len(prot_ids)}.')
-    loader = NeighborLoader(graph, num_neighbors=[8, 4], batch_size=64, input_nodes=mask)
-
-    model.eval()
-    all_predictions = defaultdict(list)
-    for batch in loader:
-        batch.to(device)
-        preds = model.predict(batch)[:batch.batch_size]
-        top_scores, top_indices = torch.topk(preds, 200)  # Get the top k scores along with their indices
-
-        batch_node_indices = batch.n_id[:batch.batch_size]
-        batch_prot_ids = [node_idx_to_prot_id[idx.item()] for idx in batch_node_indices]
-        for prot_id, scores, class_indices in zip(batch_prot_ids, top_scores, top_indices):
-            all_predictions[prot_id] = [(class_idx_to_go_term[class_idx.item()], score.item()) for score, class_idx in zip(scores, class_indices)]
-
-    return all_predictions
 
 
 if __name__ == '__main__':

@@ -8,9 +8,9 @@ class Net(torch.nn.Module):
     def __init__(self, prot_embedding_size: int, num_classes: int):
         super().__init__()
         # TODO: try GATv2Conv.
-        self.conv1 = SAGEConv(prot_embedding_size, 10000)
-        self.batchnorm1 = BatchNorm(10000)
-        self.conv2 = SAGEConv(10000, num_classes)
+        self.conv1 = SAGEConv(prot_embedding_size, 14000)
+        self.batchnorm1 = BatchNorm(14000)
+        self.conv2 = SAGEConv(14000, num_classes)
 
     def forward(self, data: GeometricData):
         x, edge_index = data.x, data.edge_index

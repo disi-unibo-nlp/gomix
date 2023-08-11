@@ -24,12 +24,9 @@ class ProteinGraphBuilder:
         self.prot_id_to_node_idx = {prot_id: i for i, prot_id in enumerate(self._ppi_net.keys())}
         self.go_term_to_class_idx = None
 
-    def set_targets(self, prot_annotations_file_path: str) -> None:
-        # Load protein annotations, i.e. a mapping from protein -> GO term
-        # Format: { protein1: [term1, term2], protein2: [term3] }
-        with open(prot_annotations_file_path, 'r') as f:
-            prot_annotations = json.load(f)
-
+    # prot_annotations is a mapping from protein -> GO term
+    # (format: { protein1: [term1, term2], protein2: [term3] })
+    def set_targets(self, prot_annotations: dict) -> None:
         # First, establish a vocabulary of GO terms.
         go_terms = set()
         for prot_id, ann_go_terms in prot_annotations.items():
@@ -52,7 +49,7 @@ class ProteinGraphBuilder:
     def build(self) -> GeometricData:
         adj_matrix = self._make_adj_matrix()
 
-        adj_matrix[adj_matrix < 0.86] = 0
+        adj_matrix[adj_matrix < 0.9] = 0
 
         edge_index = torch.LongTensor(np.nonzero(adj_matrix))
         # Uncomment if you want to also consider edge weights (i.e. similarity scores). Binary should be enough, though.
