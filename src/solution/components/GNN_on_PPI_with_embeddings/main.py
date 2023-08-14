@@ -90,12 +90,12 @@ def make_and_train_model_on(graph: GeometricData, graph_ctx: dict) -> Net:
     print('Training...')
     best_val_f_max = -np.inf
     best_epoch = 0
-    for epoch in range(80):
-        print(f"Epoch {epoch+1}: lr={optimizer.param_groups[0]['lr']}")
+    for epoch in range(1, 81):
+        print(f"Epoch {epoch}: lr={optimizer.param_groups[0]['lr']}")
         model.train()
 
         pbar = tqdm(total=int(len(train_loader.dataset)))
-        pbar.set_description(f'Epoch {epoch+1}')
+        pbar.set_description(f'Epoch {epoch}')
 
         total_loss = total_examples = 0
         for batch in train_loader:
@@ -114,10 +114,10 @@ def make_and_train_model_on(graph: GeometricData, graph_ctx: dict) -> Net:
         pbar.close()
 
         loss = total_loss / total_examples
-        print(f'Epoch {epoch+1}, Loss: {loss:.4f}')
+        print(f'Epoch {epoch}, Loss: {loss:.4f}')
 
         val_loss, performances_by_threshold = _validate_model(model, val_loader, loss_fn)
-        print(f'Epoch {epoch+1}, Validation Loss: {val_loss:.4f}')
+        print(f'Epoch {epoch}, Validation Loss: {val_loss:.4f}')
 
         f_max = 0
         opt_threshold = 0
@@ -127,7 +127,7 @@ def make_and_train_model_on(graph: GeometricData, graph_ctx: dict) -> Net:
                 if f1_score > f_max:
                     f_max = f1_score
                     opt_threshold = threshold
-        print(f'[{epoch+1}, validation] F_max: {f_max:.4f} (at optimal threshold t={opt_threshold})')
+        print(f'[{epoch}, validation] F_max: {f_max:.4f} (at optimal threshold t={opt_threshold})')
 
         if f_max > best_val_f_max:
             best_val_f_max = f_max
