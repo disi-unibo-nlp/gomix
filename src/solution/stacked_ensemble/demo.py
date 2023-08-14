@@ -11,6 +11,7 @@ from src.utils.EmbeddedProteinsDataset import EmbeddedProteinsDataset
 import argparse
 from src.solution.components.naive.NaiveLearner import NaiveLearner
 from src.solution.components.diamondscore.DiamondScoreLearner import DiamondScoreLearner
+from src.solution.components.interactionscore.InteractionScoreLearner import InteractionScoreLearner
 from src.solution.components.FC_on_embeddings.main import ALL_PROTEIN_EMBEDDINGS_DIR, \
     make_and_train_model_on as make_and_train_fc_on_embeddings_model, \
     predict_and_transform_predictions_to_dict as predict_with_nn_model_and_transform_preds_to_dict
@@ -149,10 +150,11 @@ def create_go_terms_vocabulary_from_annotations(annotations: dict) -> List[str]:
 
 
 def train_base_models_and_generate_level1_predictions(train_annotations: dict, target_prot_ids: List[str]) -> List[dict]:
-    naive_learner, diamondscore_learner, (nn_model, go_term_to_nn_output_index), (gnn_model, graph, graph_ctx) = make_and_train_base_models(train_annotations)
+    naive_learner, diamondscore_learner, interactionscore_learner, (nn_model, go_term_to_nn_output_index), (gnn_model, graph, graph_ctx) = make_and_train_base_models(train_annotations)
     return [
         {prot_id: [(go_term, score) for go_term, score in naive_learner.predict().items()] for prot_id in target_prot_ids},
         {prot_id: [(go_term, score) for go_term, score in diamondscore_learner.predict(prot_id).items()] for prot_id in target_prot_ids},
+        {prot_id: [(go_term, score) for go_term, score in interactionscore_learner.predict(prot_id).items()] for prot_id in target_prot_ids},
         predict_with_nn_model_and_transform_preds_to_dict(model=nn_model, prot_ids=target_prot_ids, go_term_to_index=go_term_to_nn_output_index),
         predict_with_gnn_model_and_transform_preds_to_dict(model=gnn_model, prot_ids=target_prot_ids, graph=graph, graph_ctx=graph_ctx),
     ]
@@ -162,6 +164,7 @@ def make_and_train_base_models(train_annotations):
     return (
         NaiveLearner(train_annotations),
         DiamondScoreLearner(train_annotations, ALL_PROTEINS_DIAMOND_SCORES_FILE_PATH),
+        InteractionScoreLearner(train_annotations, PPI_FILE_PATH),
         make_and_train_neural_fc_on_embeddings(train_annotations),
         make_and_train_gnn_model_with_annotations(train_annotations),
     )

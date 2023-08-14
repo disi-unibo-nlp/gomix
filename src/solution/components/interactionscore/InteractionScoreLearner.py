@@ -34,7 +34,12 @@ class InteractionScoreLearner:
 
     @staticmethod
     def _read_interaction_scores(ppi_file_path: str) -> dict:
-        with open(ppi_file_path, 'r') as f:
-            scores = json.load(f)
-        assert isinstance(scores, dict)
-        return scores
+        with open(ppi_file_path) as f:
+            scores = json.load(f)  # dict: {prot_id: {interacting_prot_id: score, ...}, ...}
+
+        # Keep only the top-k scores for each protein.
+        top_k = 30
+        return {
+            prot_id: dict(sorted(prot_scores.items(), key=lambda x: x[1], reverse=True)[:top_k])
+            for prot_id, prot_scores in scores.items()
+        }
