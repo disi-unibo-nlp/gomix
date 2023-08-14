@@ -260,6 +260,7 @@ def _evaluate_for_testing_with_official_criteria(model: torch.nn.Module, graph: 
 
     predictions = predict_and_transform_predictions_to_dict(model, test_prot_ids, graph, graph_ctx)
 
+    print('Test results:')
     evaluate_with_deepgoplus_method(
         gene_ontology_file_path=GENE_ONTOLOGY_FILE_PATH,
         predictions=predictions,
