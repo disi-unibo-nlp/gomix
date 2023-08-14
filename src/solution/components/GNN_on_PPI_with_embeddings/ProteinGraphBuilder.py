@@ -49,7 +49,7 @@ class ProteinGraphBuilder:
     def build(self) -> GeometricData:
         adj_matrix = self._make_adj_matrix()
 
-        adj_matrix[adj_matrix < 0.9] = 0
+        adj_matrix[adj_matrix < 0.88] = 0
 
         edge_index = torch.LongTensor(np.nonzero(adj_matrix))
         # Uncomment if you want to also consider edge weights (i.e. similarity scores). Binary should be enough, though.
