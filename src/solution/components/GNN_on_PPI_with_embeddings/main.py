@@ -4,6 +4,7 @@ import numpy as np
 from collections import defaultdict
 import torch
 import torch.optim as optim
+import torch.nn as nn
 from torch_geometric.data import Data as GeometricData
 from torch_geometric.loader import NeighborLoader
 from tqdm import tqdm
@@ -23,7 +24,7 @@ TRAIN_ANNOTATIONS_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/processed
 OFFICIAL_TEST_ANNOTS_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/annotations/test.json')
 GENE_ONTOLOGY_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/raw/task_datasets/2016/go.obo')
 
-device = torch.device('cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu'))
+DEVICE = torch.device('cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu'))
 
 PROT_EMBEDDING_SIZE = 5120  # Number of elements in a single protein embedding vector (`2560` for esm2-3B embeddings)
 
@@ -81,8 +82,8 @@ def make_and_train_model_on(graph: GeometricData, graph_ctx: dict) -> Net:
 
     print('Train-val split: {} - {}'.format(train_mask.sum(), val_mask.sum()))
 
-    print(f'\nUsing device: {device}')
-    model = Net(prot_embedding_size=PROT_EMBEDDING_SIZE, num_classes=len(graph_ctx['go_term_to_class_idx'])).to(device)
+    print(f'\nUsing device: {DEVICE}')
+    model = Net(prot_embedding_size=PROT_EMBEDDING_SIZE, num_classes=len(graph_ctx['go_term_to_class_idx'])).to(DEVICE)
     optimizer = optim.Adam(model.parameters(), lr=4e-3)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=4, gamma=0.62)
     loss_fn = torch.nn.BCEWithLogitsLoss()
@@ -99,7 +100,7 @@ def make_and_train_model_on(graph: GeometricData, graph_ctx: dict) -> Net:
 
         total_loss = total_examples = 0
         for batch in train_loader:
-            batch.to(device)
+            batch.to(DEVICE)
 
             optimizer.zero_grad()
             targets = batch.y[:batch.batch_size]
@@ -152,10 +153,12 @@ def predict_and_transform_predictions_to_dict(model, prot_ids: List[str], graph:
         print(f'Note: the test graph mask has {mask.sum()} nodes, while the number of test proteins was {len(prot_ids)}.')
     loader = NeighborLoader(graph, num_neighbors=[8, 4], batch_size=64, input_nodes=mask)
 
+    prev_device = _get_model_device(model)
+    model.to(DEVICE)
     model.eval()
-    all_predictions = defaultdict(list)
+    all_predictions = {prot_id: [] for prot_id in prot_ids}  # Filling default values for proteins with no predictions (i.e., proteins missing from the graph).
     for batch in loader:
-        batch.to(device)
+        batch.to(DEVICE)
         preds = model.predict(batch)[:batch.batch_size]
         top_scores, top_indices = torch.topk(preds, 200)  # Get the top k scores along with their indices
 
@@ -163,6 +166,8 @@ def predict_and_transform_predictions_to_dict(model, prot_ids: List[str], graph:
         batch_prot_ids = [node_idx_to_prot_id[idx.item()] for idx in batch_node_indices]
         for prot_id, scores, class_indices in zip(batch_prot_ids, top_scores, top_indices):
             all_predictions[prot_id] = [(class_idx_to_go_term[class_idx.item()], score.item()) for score, class_idx in zip(scores, class_indices)]
+
+    model.to(prev_device)
 
     return all_predictions
 
@@ -215,12 +220,13 @@ def _validate_model(model, val_loader, loss_fn: torch.nn.Module):
     pbar = tqdm(total=len(val_loader.dataset))
     pbar.set_description('Evaluating')
 
+    model.to(DEVICE)
     model.eval()
     total_loss = total_examples = 0
     all_preds = []
     all_targets = []
     for batch in val_loader:
-        batch.to(device)
+        batch.to(DEVICE)
 
         targets = batch.y[:batch.batch_size]
         preds = model(batch)[:batch.batch_size]
@@ -266,6 +272,10 @@ def _evaluate_for_testing_with_official_criteria(model: torch.nn.Module, graph: 
         predictions=predictions,
         ground_truth=test_annotations
     )
+
+
+def _get_model_device(model: nn.Module) -> torch.device:
+    return next(model.parameters()).device
 
 
 if __name__ == '__main__':

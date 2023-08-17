@@ -3,6 +3,7 @@ import json
 import os
 from torch.utils.data import DataLoader
 import torch.optim as optim
+import torch.nn as nn
 from sklearn.model_selection import train_test_split
 import numpy as np
 import sys
@@ -21,7 +22,7 @@ OFFICIAL_TEST_ANNOTS_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/proces
 ALL_PROTEIN_EMBEDDINGS_DIR = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/all_protein_embeddings/esm2_t48_15B_UR50D')
 GENE_ONTOLOGY_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/raw/task_datasets/2016/go.obo')
 
-device = torch.device('cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu'))
+DEVICE = torch.device('cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu'))
 
 PROT_EMBEDDING_SIZE = 5120  # Number of elements in a single protein embedding vector (`2560` for esm2-3B embeddings)
 
@@ -40,10 +41,10 @@ def make_and_train_model_on(dataset) -> ProteinToGOModel:
     train_dataloader = DataLoader(train_set, batch_size=64, shuffle=True)
     val_dataloader = DataLoader(val_set, batch_size=64)
 
-    print(f"Training using device: {device}")
+    print(f"Training using device: {DEVICE}")
 
     model = ProteinToGOModel(protein_embedding_size=PROT_EMBEDDING_SIZE, output_size=len(dataset.go_term_to_index))
-    model.to(device)
+    model.to(DEVICE)
     optimizer = optim.Adam(model.parameters(), lr=1e-4)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=13, gamma=0.1)
     loss_fn = torch.nn.BCEWithLogitsLoss()
@@ -55,8 +56,8 @@ def make_and_train_model_on(dataset) -> ProteinToGOModel:
         model.train()
         train_loss = 0.0
         for i, (prot_embeddings, targets) in enumerate(train_dataloader):
-            prot_embeddings = prot_embeddings.to(device)
-            targets = targets.to(device)
+            prot_embeddings = prot_embeddings.to(DEVICE)
+            targets = targets.to(DEVICE)
             optimizer.zero_grad()
             outputs = model(prot_embeddings)
             loss = loss_fn(outputs, targets)
@@ -105,14 +106,15 @@ def _make_training_dataset():
 
 
 def _evaluate_for_validation(model, dataloader, loss_fn):
+    model.to(DEVICE)
     model.eval()
     running_loss = 0.0
     all_preds = []
     all_targets = []
     with torch.no_grad():
         for prot_embeddings, targets in dataloader:
-            prot_embeddings = prot_embeddings.to(device)
-            targets = targets.to(device)
+            prot_embeddings = prot_embeddings.to(DEVICE)
+            targets = targets.to(DEVICE)
             outputs = model(prot_embeddings)
             running_loss += loss_fn(outputs, targets).item()
             all_preds.append(torch.sigmoid(outputs))
@@ -153,6 +155,8 @@ def _evaluate_for_testing_with_official_criteria(model, go_term_to_index: dict):
 def predict_and_transform_predictions_to_dict(model, prot_ids: List[str], go_term_to_index: dict) -> dict:
     index_to_go_term = {v: k for k, v in go_term_to_index.items()}
 
+    prev_device = _get_model_device(model)
+    model.to(DEVICE)
     model.eval()
     with torch.no_grad():
         all_predictions = {}
@@ -161,13 +165,19 @@ def predict_and_transform_predictions_to_dict(model, prot_ids: List[str], go_ter
             batch_prot_ids = prot_ids[i:i + batch_size]
             batch_prot_embeddings = torch.stack([load_protein_embedding(ALL_PROTEIN_EMBEDDINGS_DIR, prot_id) for prot_id in batch_prot_ids])
 
-            preds = model.predict(batch_prot_embeddings.to(device))
+            preds = model.predict(batch_prot_embeddings.to(DEVICE))
             top_scores, top_indices = torch.topk(preds, 200)  # Get the top k scores along with their indices
 
             for prot_id, scores, indices in zip(batch_prot_ids, top_scores, top_indices):
                 all_predictions[prot_id] = [(index_to_go_term[idx.item()], score.item()) for score, idx in zip(scores, indices)]
 
+    model.to(prev_device)
+
     return all_predictions
+
+
+def _get_model_device(model: nn.Module) -> torch.device:
+    return next(model.parameters()).device
 
 
 if __name__ == '__main__':
