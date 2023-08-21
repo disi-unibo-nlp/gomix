@@ -77,7 +77,7 @@ def build_whole_graph_from_scratch(train_annotations: dict) -> tuple:
 
 def make_and_train_model_on(graph: GeometricData, graph_ctx: dict) -> Net:
     train_mask, val_mask = _make_train_val_masks(graph, graph_ctx)
-    train_loader = NeighborLoader(graph, num_neighbors=[8, 4], batch_size=64, input_nodes=train_mask)
+    train_loader = NeighborLoader(graph, num_neighbors=[8, 4], batch_size=32, input_nodes=train_mask)
     val_loader = NeighborLoader(graph, num_neighbors=[8, 4], batch_size=64, input_nodes=val_mask)
 
     print('Train-val split: {} - {}'.format(train_mask.sum(), val_mask.sum()))
