@@ -43,8 +43,7 @@ def make_and_train_model_on(dataset) -> ProteinToGOModel:
 
     print(f"Training using device: {DEVICE}")
 
-    model = ProteinToGOModel(protein_embedding_size=PROT_EMBEDDING_SIZE, output_size=len(dataset.go_term_to_index))
-    model.to(DEVICE)
+    model = make_model_on_device(dataset.go_term_to_index)
     optimizer = optim.Adam(model.parameters(), lr=1e-4)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=13, gamma=0.1)
     loss_fn = torch.nn.BCEWithLogitsLoss()
@@ -93,6 +92,10 @@ def make_and_train_model_on(dataset) -> ProteinToGOModel:
         scheduler.step()
 
     return model
+
+
+def make_model_on_device(go_term_to_index: dict):
+    return ProteinToGOModel(protein_embedding_size=PROT_EMBEDDING_SIZE, output_size=len(go_term_to_index)).to(DEVICE)
 
 
 def _make_training_dataset():

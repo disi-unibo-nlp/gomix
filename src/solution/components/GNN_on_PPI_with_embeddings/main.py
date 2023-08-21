@@ -83,7 +83,7 @@ def make_and_train_model_on(graph: GeometricData, graph_ctx: dict) -> Net:
     print('Train-val split: {} - {}'.format(train_mask.sum(), val_mask.sum()))
 
     print(f'\nUsing device: {DEVICE}')
-    model = Net(prot_embedding_size=PROT_EMBEDDING_SIZE, num_classes=len(graph_ctx['go_term_to_class_idx'])).to(DEVICE)
+    model = make_model_on_device(graph_ctx)
     optimizer = optim.Adam(model.parameters(), lr=4e-3)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=4, gamma=0.62)
     loss_fn = torch.nn.BCEWithLogitsLoss()
@@ -141,6 +141,10 @@ def make_and_train_model_on(graph: GeometricData, graph_ctx: dict) -> Net:
         scheduler.step()
 
     return model
+
+
+def make_model_on_device(graph_ctx: dict) -> Net:
+    return Net(prot_embedding_size=PROT_EMBEDDING_SIZE, num_classes=len(graph_ctx['go_term_to_class_idx'])).to(DEVICE)
 
 
 @torch.no_grad()

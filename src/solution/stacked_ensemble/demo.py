@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 import json
 from itertools import chain
-from typing import List, Tuple
+from typing import List, Tuple, Type
 sys.path.append(str(Path(__file__).resolve().parents[3]))
 import random
 import torch
@@ -14,9 +14,11 @@ from src.solution.components.diamondscore.DiamondScoreLearner import DiamondScor
 from src.solution.components.interactionscore.InteractionScoreLearner import InteractionScoreLearner
 from src.solution.components.FC_on_embeddings.main import ALL_PROTEIN_EMBEDDINGS_DIR, \
     make_and_train_model_on as make_and_train_fc_on_embeddings_model, \
+    make_model_on_device as make_fc_on_embeddings_model, \
     predict_and_transform_predictions_to_dict as predict_with_nn_model_and_transform_preds_to_dict
 from src.solution.components.GNN_on_PPI_with_embeddings.main import build_whole_graph_from_scratch, \
     make_and_train_model_on as make_and_train_gnn_model, \
+    make_model_on_device as make_gnn_model, \
     predict_and_transform_predictions_to_dict as predict_with_gnn_model_and_transform_preds_to_dict
 from src.solution.stacked_ensemble.StackingMetaLearner import StackingMetaLearner
 from src.solution.stacked_ensemble.Level1Dataset import Level1Dataset
@@ -26,6 +28,7 @@ THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 GENE_ONTOLOGY_FILE_PATH = os.path.join(THIS_DIR, '../../../data/raw/task_datasets/2016/go.obo')
 ALL_PROTEINS_DIAMOND_SCORES_FILE_PATH = os.path.join(THIS_DIR, '../../../data/processed/task_datasets/2016/all_proteins_diamond.res')
 PPI_FILE_PATH = os.path.join(THIS_DIR, '../../../data/processed/task_datasets/2016/all_proteins_STRING_interactions.json')
+CHECKPOINTS_DIR = os.path.join(THIS_DIR, '../../../data/temp_cache/model_checkpoints')
 
 
 def main():
@@ -148,40 +151,69 @@ def create_go_terms_vocabulary_from_annotations(annotations: dict) -> List[str]:
 
 
 def train_base_models_and_generate_level1_predictions(train_annotations: dict, target_prot_ids: List[str]) -> List[dict]:
-    naive_learner, diamondscore_learner, interactionscore_learner, (nn_model, go_term_to_nn_output_index), (gnn_model, graph, graph_ctx) = make_and_train_base_models(train_annotations)
-    return [
+    """
+    Prepare the base models.
+    """
+    naive_learner = NaiveLearner(train_annotations)
+    diamondscore_learner = DiamondScoreLearner(train_annotations, ALL_PROTEINS_DIAMOND_SCORES_FILE_PATH)
+    interactionscore_learner = InteractionScoreLearner(train_annotations, PPI_FILE_PATH)
+
+    go_term_to_nn_output_index, = train_neural_fc_on_embeddings(train_annotations)
+    graph, graph_ctx = train_gnn_model_with_annotations(train_annotations)
+
+    """
+    Generate predictions (without overloading memory).
+    """
+
+    predictions = [
         {prot_id: [(go_term, score) for go_term, score in naive_learner.predict().items()] for prot_id in target_prot_ids},
         {prot_id: [(go_term, score) for go_term, score in diamondscore_learner.predict(prot_id).items()] for prot_id in target_prot_ids},
         {prot_id: [(go_term, score) for go_term, score in interactionscore_learner.predict(prot_id).items()] for prot_id in target_prot_ids},
-        predict_with_nn_model_and_transform_preds_to_dict(model=nn_model, prot_ids=target_prot_ids, go_term_to_index=go_term_to_nn_output_index),
-        predict_with_gnn_model_and_transform_preds_to_dict(model=gnn_model, prot_ids=target_prot_ids, graph=graph, graph_ctx=graph_ctx),
     ]
 
-
-def make_and_train_base_models(train_annotations):
-    return (
-        NaiveLearner(train_annotations),
-        DiamondScoreLearner(train_annotations, ALL_PROTEINS_DIAMOND_SCORES_FILE_PATH),
-        InteractionScoreLearner(train_annotations, PPI_FILE_PATH),
-        make_and_train_neural_fc_on_embeddings(train_annotations),
-        make_and_train_gnn_model_with_annotations(train_annotations),
+    nn_model = make_fc_on_embeddings_model(go_term_to_nn_output_index)
+    load_checkpoint(model=nn_model, model_name='fc_on_embeddings')
+    predictions.append(
+        predict_with_nn_model_and_transform_preds_to_dict(model=nn_model, prot_ids=target_prot_ids, go_term_to_index=go_term_to_nn_output_index)
     )
+    del nn_model
+
+    gnn_model = make_gnn_model(graph_ctx=graph_ctx)
+    load_checkpoint(model=gnn_model, model_name='gnn')
+    predictions.append(
+        predict_with_gnn_model_and_transform_preds_to_dict(model=gnn_model, prot_ids=target_prot_ids, graph=graph, graph_ctx=graph_ctx)
+    )
+    del gnn_model
+
+    return predictions
 
 
-def make_and_train_neural_fc_on_embeddings(train_annotations) -> Tuple[torch.nn.Module, dict]:
+def train_neural_fc_on_embeddings(train_annotations) -> Tuple[dict]:
     print(f"\nAbout to train the NN model on {len(train_annotations)} proteins.")
     dataset = EmbeddedProteinsDataset(annotations=train_annotations, embeddings_dir=ALL_PROTEIN_EMBEDDINGS_DIR)
     model = make_and_train_fc_on_embeddings_model(dataset)
-    model = model.cpu()
-    return model, dataset.go_term_to_index
+    save_checkpoint(model=model, model_name='fc_on_embeddings')
+    return dataset.go_term_to_index,
 
 
-def make_and_train_gnn_model_with_annotations(train_annotations):
+def train_gnn_model_with_annotations(train_annotations) -> Tuple[any, dict]:
     print(f"\nAbout to train the GNN model on {len(train_annotations)} proteins.")
     graph, graph_ctx = build_whole_graph_from_scratch(train_annotations)
     model = make_and_train_gnn_model(graph=graph, graph_ctx=graph_ctx)
-    model = model.cpu()
-    return model, graph, graph_ctx
+    save_checkpoint(model=model, model_name='gnn')
+    return graph, graph_ctx
+
+
+def save_checkpoint(model: torch.nn.Module, model_name: str):
+    if not os.path.exists(CHECKPOINTS_DIR):
+        os.makedirs(CHECKPOINTS_DIR)
+    path = os.path.join(CHECKPOINTS_DIR, f'{model_name}.pt')
+    torch.save(model.state_dict(), path)
+
+
+def load_checkpoint(model: torch.nn.Module, model_name: str):
+    path = os.path.join(CHECKPOINTS_DIR, f'{model_name}.pt')
+    model.load_state_dict(torch.load(path))
 
 
 if __name__ == '__main__':
