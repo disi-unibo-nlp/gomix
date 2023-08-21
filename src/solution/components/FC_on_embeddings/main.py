@@ -38,7 +38,7 @@ def main():
 
 def make_and_train_model_on(dataset) -> ProteinToGOModel:
     train_set, val_set = train_test_split(dataset, test_size=0.2)
-    train_dataloader = DataLoader(train_set, batch_size=64, shuffle=True)
+    train_dataloader = DataLoader(train_set, batch_size=32, shuffle=True)
     val_dataloader = DataLoader(val_set, batch_size=64)
 
     print(f"Training using device: {DEVICE}")
