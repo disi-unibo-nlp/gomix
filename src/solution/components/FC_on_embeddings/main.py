@@ -19,7 +19,7 @@ torch.manual_seed(0)
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 PROPAGATED_TRAIN_ANNOTS_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/propagated_annotations/train.json')
 OFFICIAL_TEST_ANNOTS_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/annotations/test.json')
-ALL_PROTEIN_EMBEDDINGS_DIR = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/all_protein_embeddings/esm2_t48_15B_UR50D')
+ALL_PROTEIN_EMBEDDINGS_DIR = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/all_protein_embeddings/esm2_t36_3B_UR50D')
 GENE_ONTOLOGY_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/raw/task_datasets/2016/go.obo')
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu'))
@@ -169,7 +169,7 @@ def predict_and_transform_predictions_to_dict(model, prot_ids: List[str], go_ter
             batch_prot_embeddings = torch.stack([load_protein_embedding(ALL_PROTEIN_EMBEDDINGS_DIR, prot_id) for prot_id in batch_prot_ids])
 
             preds = model.predict(batch_prot_embeddings.to(DEVICE))
-            top_scores, top_indices = torch.topk(preds, 200)  # Get the top k scores along with their indices
+            top_scores, top_indices = torch.topk(preds, 140)  # Get the top k scores along with their indices
 
             for prot_id, scores, indices in zip(batch_prot_ids, top_scores, top_indices):
                 all_predictions[prot_id] = [(index_to_go_term[idx.item()], score.item()) for score, idx in zip(scores, indices)]

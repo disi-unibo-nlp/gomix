@@ -158,6 +158,8 @@ def train_base_models_and_generate_level1_predictions(train_annotations: dict, t
     diamondscore_learner = DiamondScoreLearner(train_annotations, ALL_PROTEINS_DIAMOND_SCORES_FILE_PATH)
     interactionscore_learner = InteractionScoreLearner(train_annotations, PPI_FILE_PATH)
 
+    # The trained models will be saved to disk, so that they can be re-used later in this function.
+    # Why not keeping them in memory? Because they're too big to keep them all in memory at once.
     go_term_to_nn_output_index, = train_neural_fc_on_embeddings(train_annotations)
     graph, graph_ctx = train_gnn_model_with_annotations(train_annotations)
 

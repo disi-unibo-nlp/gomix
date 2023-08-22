@@ -164,7 +164,7 @@ def predict_and_transform_predictions_to_dict(model, prot_ids: List[str], graph:
     for batch in loader:
         batch.to(DEVICE)
         preds = model.predict(batch)[:batch.batch_size]
-        top_scores, top_indices = torch.topk(preds, 200)  # Get the top k scores along with their indices
+        top_scores, top_indices = torch.topk(preds, 140)  # Get the top k scores along with their indices
 
         batch_node_indices = batch.n_id[:batch.batch_size]
         batch_prot_ids = [node_idx_to_prot_id[idx.item()] for idx in batch_node_indices]
