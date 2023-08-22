@@ -1,10 +1,10 @@
-# Protein function prediction (for CAFA challenge)
-
-## Overview
+# Protein function prediction
 
 In this research work, we tackle the problem of predicting the GO terms associated to a protein, based on the protein's amino-acidic sequence and the way it interacts with other proteins as specified by PPI networks (Protein-Protein Interaction networks), like STRING.
 
 This task is the topic of the [CAFA](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1835-8) challenge.
+
+## Methods
 
 To encode proteins, we'll sometimes use **ESM2**, a protein language model by Facebook. It first embeds amino acids, then you usually take the average between them and you get the protein embedding.
 
