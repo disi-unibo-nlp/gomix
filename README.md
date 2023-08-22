@@ -35,7 +35,7 @@ We're currently testing on a dataset called "2016" and taken from the DeepGOPlus
 - Add as input the 3D structure of the proteins, coming from DBs like the Protein Data Bank (PDB). [Here](https://www.nature.com/articles/s41467-021-23303-9) is a Nature paper that uses it to predict protein function.
 - Add information from other PPI networks besides STRING.
 
-## Notes for writing the paper about this research
+## Notes for paper writing
 
 ### Differential analysis
 
