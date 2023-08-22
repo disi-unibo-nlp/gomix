@@ -28,12 +28,13 @@ We're currently testing on a dataset called "2016" and taken from the DeepGOPlus
 ### Ideas to improve the current solution
 
 - Use text embeddings of protein-associated documents as input, a bit like [NetGO 2.0](https://academic.oup.com/nar/article/49/W1/W469/6285266#267025483) did (see "LR-text").
-- Add [Proteinfer](https://google-research.github.io/proteinfer/) as component.
+- Add [Proteinfer](https://google-research.github.io/proteinfer/) as component ([GitHub](https://github.com/google-research/proteinfer/tree/master)).
 - Add [DeepGOA](https://ieeexplore.ieee.org/document/8983075) as component.
-- Use [SIGN](https://arxiv.org/pdf/2004.11198.pdf) or [GraphSAINT](https://arxiv.org/abs/1907.04931) instead of the current GCN.
 - Improve the current GCN with new methods such as [over-squashing prevention](https://arxiv.org/abs/2306.03589) and [half-hop](https://www.linkedin.com/posts/petarvelickovic_icml2023-activity-7090395512402534401-TGxD/?utm_source=share&utm_medium=member_desktop).
+- Use [SIGN](https://arxiv.org/pdf/2004.11198.pdf) or [GraphSAINT](https://arxiv.org/abs/1907.04931) instead of the current GCN.
 - Add as input the 3D structure of the proteins, coming from DBs like the Protein Data Bank (PDB). [Here](https://www.nature.com/articles/s41467-021-23303-9) is a Nature paper that uses it to predict protein function.
 - Add information from other PPI networks besides STRING.
+- Take inspiration from NetGO papers ([here](https://github.com/paccanarolab/netgo)'s an unofficial implementation of the oldest one).
 
 ## Notes for paper writing
 
