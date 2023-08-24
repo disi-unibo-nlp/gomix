@@ -25,8 +25,24 @@ The last 2 are the only ones based on neural networks training.
 
 We're currently testing on a dataset called "2016" and taken from the DeepGOPlus paper. We'll also need to test on other datasets in the same paper and others.
 
+### Current best results
+
+On 2016 dataset (using stacked ensemble with the 5 components above):
+- **mf**: 58.13% F_max (optimal threshold=0.18)
+- **bp**: 49.13% F_max (optimal threshold=0.27)
+- **cc**: 71.11% F_max (optimal threshold=0.33)
+
 ### Ideas to improve the current solution
 
+**Minor:**
+- Use the 15B ESM2 protein embeddings instead of the 3B ones.
+- Increase the train batch size of FC-on-embeddings to improve the chance that batch normalization works well.
+- Try using dropout instead of batch normalization in FC-on-embeddings.
+- Reduce the number of linear regressors used in the stacked ensemble.
+- Try increasing the size of the neural-network models (especially those you had to reduce to fit in the GPU memory, like the FC one).
+- Try using a different criterion (other than general F_max) for early stopping when training NN models.
+
+**Major:**
 - Use text embeddings of protein-associated documents as input, a bit like [NetGO 2.0](https://academic.oup.com/nar/article/49/W1/W469/6285266#267025483) did (see "LR-text").
 - Add [Proteinfer](https://google-research.github.io/proteinfer/) as component ([GitHub](https://github.com/google-research/proteinfer/tree/master)).
 - Add [DeepGOA](https://ieeexplore.ieee.org/document/8983075) as component.

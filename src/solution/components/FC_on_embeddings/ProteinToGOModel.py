@@ -6,11 +6,11 @@ class ProteinToGOModel(nn.Module):
     def __init__(self, protein_embedding_size, output_size):
         super().__init__()
         self.model = nn.Sequential(
-            nn.Linear(protein_embedding_size, 13000),
-            nn.BatchNorm1d(13000),
+            nn.Linear(protein_embedding_size, 12000),
+            nn.BatchNorm1d(12000),
             nn.ReLU(),
 
-            nn.Linear(13000, 10000),
+            nn.Linear(12000, 10000),
             nn.BatchNorm1d(10000),
             nn.ReLU(),
 

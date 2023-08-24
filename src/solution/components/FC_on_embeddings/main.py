@@ -19,12 +19,12 @@ torch.manual_seed(0)
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 PROPAGATED_TRAIN_ANNOTS_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/propagated_annotations/train.json')
 OFFICIAL_TEST_ANNOTS_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/annotations/test.json')
-ALL_PROTEIN_EMBEDDINGS_DIR = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/all_protein_embeddings/esm2_t36_3B_UR50D')
+ALL_PROTEIN_EMBEDDINGS_DIR = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/all_protein_embeddings/esm2_t48_15B_UR50D')
 GENE_ONTOLOGY_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/raw/task_datasets/2016/go.obo')
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu'))
 
-PROT_EMBEDDING_SIZE = 2560  # Number of elements in a single protein embedding vector (`2560` for esm2-3B embeddings, `5120` for esm2-15B embeddings)
+PROT_EMBEDDING_SIZE = 5120  # Number of elements in a single protein embedding vector (`2560` for esm2-3B embeddings, `5120` for esm2-15B embeddings)
 
 
 def main():
@@ -38,8 +38,8 @@ def main():
 
 def make_and_train_model_on(dataset) -> ProteinToGOModel:
     train_set, val_set = train_test_split(dataset, test_size=0.2)
-    train_dataloader = DataLoader(train_set, batch_size=32, shuffle=True)
-    val_dataloader = DataLoader(val_set, batch_size=64)
+    train_dataloader = DataLoader(train_set, batch_size=8, shuffle=True, drop_last=True)
+    val_dataloader = DataLoader(val_set, batch_size=16)
 
     print(f"Training using device: {DEVICE}")
 
@@ -84,7 +84,7 @@ def make_and_train_model_on(dataset) -> ProteinToGOModel:
         if f_max > best_val_f_max:
             best_val_f_max = f_max
             best_epoch = epoch
-        elif epoch - best_epoch > 3:  # Early stopping.
+        elif epoch - best_epoch > 2:  # Early stopping.
             print(f'Early stopping. Best F_max score on validation set was {best_val_f_max:.4f} at epoch {best_epoch}')
             break
 

@@ -26,7 +26,7 @@ GENE_ONTOLOGY_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/raw/task_data
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu'))
 
-PROT_EMBEDDING_SIZE = 2560  # Number of elements in a single protein embedding vector (`2560` for esm2-3B embeddings, `5120` for esm2-15B embeddings)
+PROT_EMBEDDING_SIZE = 5120  # Number of elements in a single protein embedding vector (`2560` for esm2-3B embeddings, `5120` for esm2-15B embeddings)
 
 
 def main():
@@ -133,7 +133,7 @@ def make_and_train_model_on(graph: GeometricData, graph_ctx: dict) -> Net:
         if f_max > best_val_f_max:
             best_val_f_max = f_max
             best_epoch = epoch
-        elif epoch - best_epoch > 3:  # Early stopping.
+        elif epoch - best_epoch > 2:  # Early stopping.
             print(f'Early stopping. Best F_max score on validation set was {best_val_f_max:.4f} at epoch {best_epoch}')
             break
 
