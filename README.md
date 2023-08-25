@@ -28,17 +28,17 @@ We're currently testing on a dataset called "2016" and taken from the DeepGOPlus
 ### Current best results
 
 On 2016 dataset (using stacked ensemble with the 5 components above):
-- **mf**: 58.13% F_max (optimal threshold=0.18)
-- **bp**: 49.13% F_max (optimal threshold=0.27)
-- **cc**: 71.11% F_max (optimal threshold=0.33)
+- **mf**: 58.58% F_max (optimal threshold=0.15)
+- **bp**: 49.59% F_max (optimal threshold=0.26)
+- **cc**: 71.24% F_max (optimal threshold=0.33)
 
 ### Ideas to improve the current solution
 
 **Minor:**
 - Use the 15B ESM2 protein embeddings instead of the 3B ones.
-- Increase the train batch size of FC-on-embeddings to improve the chance that batch normalization works well.
 - Try using dropout instead of batch normalization in FC-on-embeddings.
-- Reduce the number of linear regressors used in the stacked ensemble.
+- Try reducing the number of linear regressors used in the stacked ensemble.
+- Change the proportion of train-test split for training the base models to generate the level-1 train set.
 - Try increasing the size of the neural-network models (especially those you had to reduce to fit in the GPU memory, like the FC one).
 - Try using a different criterion (other than general F_max) for early stopping when training NN models.
 
