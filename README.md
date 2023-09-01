@@ -4,9 +4,13 @@ In this research work, we tackle the problem of predicting the GO terms associat
 
 This task is the topic of the [CAFA](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1835-8) challenge.
 
+## Dataset
+
+- `uniprot_swiss_entries.dat` comes from https://www.uniprot.org/help/downloads
+
 ## Methods
 
-To encode proteins, we'll sometimes use **ESM2**, a protein language model by Facebook. It first embeds amino acids, then you usually take the average between them and you get the protein embedding.
+To encode proteins, we'll sometimes use **ESM2**, a protein language model by Facebook. It first embeds amino acids, then you may take the average between them as the protein embedding.
 
 Facebook provided a script for embedding the proteins from a FASTA file, that I copied into `src/utils/embed_proteins_from_fasta`. Usage is described [here](https://github.com/facebookresearch/esm). 
 
@@ -27,22 +31,22 @@ We're currently testing on a dataset called "2016" and taken from the DeepGOPlus
 
 ### Current best results
 
-On 2016 dataset (using stacked ensemble with the 5 components above):
-- **mf**: 58.58% F_max (optimal threshold=0.15)
-- **bp**: 49.59% F_max (optimal threshold=0.26)
-- **cc**: 71.24% F_max (optimal threshold=0.33)
+On 2016 dataset (using stacked ensemble with the components above, **except GNN**):
+- **MFO** | F_max: 0.584 (optimal threshold=0.19) | S_min: 8.762 | AUPR: 0.536
+- **BPO** | F_max: 0.496 (optimal threshold=0.29) | S_min: 32.930 | AUPR: 0.432
+- **CCO** | F_max: 0.714 (optimal threshold=0.36) | S_min: 7.358 | AUPR: 0.722
 
 ### Ideas to improve the current solution
 
 **Minor:**
-- Use the 15B ESM2 protein embeddings instead of the 3B ones.
+- Change the proportion of train-test split for training the base models to generate the level-1 train set.
 - Try using dropout instead of batch normalization in FC-on-embeddings.
 - Try reducing the number of linear regressors used in the stacked ensemble.
-- Change the proportion of train-test split for training the base models to generate the level-1 train set.
-- Try increasing the size of the neural-network models (especially those you had to reduce to fit in the GPU memory, like the FC one).
+- Try increasing the size of the neural-network models.
 - Try using a different criterion (other than general F_max) for early stopping when training NN models.
 
 **Major:**
+- Use protein features from InterPro as input, like other papers did (e.g., [NetGO](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6602452/), [NetGO 2.0](https://academic.oup.com/nar/article/49/W1/W469/6285266) and [DeepGraphGO](https://academic.oup.com/bioinformatics/article/37/Supplement_1/i262/6319663)).
 - Use text embeddings of protein-associated documents as input, a bit like [NetGO 2.0](https://academic.oup.com/nar/article/49/W1/W469/6285266#267025483) did (see "LR-text").
 - Add [Proteinfer](https://google-research.github.io/proteinfer/) as component ([GitHub](https://github.com/google-research/proteinfer/tree/master)).
 - Add [DeepGOA](https://ieeexplore.ieee.org/document/8983075) as component.

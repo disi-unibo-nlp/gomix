@@ -3,7 +3,7 @@ from pathlib import Path
 import json
 sys.path.append(str(Path(__file__).resolve().parents[4]))
 from src.solution.components.interactionscore.InteractionScoreLearner import InteractionScoreLearner
-from src.utils.predictions_evaluation.evaluate import evaluate_with_deepgoplus_method
+from src.utils.predictions_evaluation.evaluate import evaluate_with_deepgoplus_evaluator
 import argparse
 
 
@@ -33,7 +33,7 @@ def main():
     }
 
     print('Evaluating InteractionScore predictions...')
-    evaluate_with_deepgoplus_method(
+    evaluate_with_deepgoplus_evaluator(
         gene_ontology_file_path=args.gene_ontology_file_path,
         predictions=predictions,
         ground_truth=test_annotations

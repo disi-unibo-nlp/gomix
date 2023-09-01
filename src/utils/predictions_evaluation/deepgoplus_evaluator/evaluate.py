@@ -1,17 +1,24 @@
+import os
 from collections import deque, Counter
 import math
+import numpy as np
+import json
+
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+# TODO: make this a parameter. It's not right to assume that the dataset we're using is specifically the '2016' one. Be careful: it's probably necessary to use propagated annotations (also for test set). Double-check by seeing how the S_min mesaure is computed.
+PROPAGATED_ANNOTATIONS_DIR = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/propagated_annotations')
 
 # Code adapted from https://github.com/bio-ontology-research-group/deepgoplus
 
 ONT_ROOTS = {
-    'mf': 'GO:0003674',
-    'bp': 'GO:0008150',
-    'cc': 'GO:0005575'
+    'MFO': 'GO:0003674',
+    'BPO': 'GO:0008150',
+    'CCO': 'GO:0005575'
 }
 NAMESPACES = {
-    'mf': 'molecular_function',
-    'bp': 'biological_process',
-    'cc': 'cellular_component'
+    'MFO': 'molecular_function',
+    'BPO': 'biological_process',
+    'CCO': 'cellular_component'
 }
 
 
@@ -21,12 +28,16 @@ def evaluate(
     ground_truth: dict,  # dict: Prot ID -> list of GO terms
 ):
     go_rels = _Ontology(gene_ontology_file_path, with_rels=True)
+    _calculate_ontology_ic(go_rels)
     for ont in NAMESPACES.keys():
         go_set = go_rels.get_namespace_terms(NAMESPACES[ont])
         go_set.remove(ONT_ROOTS[ont])
 
         fmax = 0.0
-        optimal_threshold = 0.0
+        optimal_f_threshold = 0.0
+        smin = 1000.0
+        precisions = []
+        recalls = []
         for t in range(101):
             threshold = t / 100.0
 
@@ -42,29 +53,56 @@ def evaluate(
                 preds &= go_set  # Very important: it removes all terms that are not in the ontology we're considering.
                 all_preds.append(preds)
 
-            fscore, _, _, _, _ = _evaluate_annots(all_gt_labels, all_preds)
+            fscore, prec, rec, s = _evaluate_annots(go=go_rels, real_annots=all_gt_labels, pred_annots=all_preds)
+            precisions.append(prec)
+            recalls.append(rec)
             if fmax < fscore:
                 fmax = fscore
-                optimal_threshold = threshold
+                optimal_f_threshold = threshold
+            if smin > s:
+                smin = s
 
-        print(f'{ont}: {(fmax*100):.2f}% F_max (optimal threshold={optimal_threshold:.2f})')
+        # Compute AUPR
+        precisions = np.array(precisions)
+        recalls = np.array(recalls)
+        sorted_index = np.argsort(recalls)
+        recalls = recalls[sorted_index]
+        precisions = precisions[sorted_index]
+        aupr = np.trapz(precisions, recalls)
+
+        print('\n' + ont)
+        print(f'F_max: {fmax:.3f} (optimal threshold={optimal_f_threshold:.2f})')
+        print(f'S_min: {smin:.3f}')
+        print(f'AUPR: {aupr:.3f}')
 
 
-def _evaluate_annots(real_annots, pred_annots):
+def _calculate_ontology_ic(go_rels):
+    annotations = []
+    for file_name in ['train.json', 'test.json']:
+        with open(os.path.join(PROPAGATED_ANNOTATIONS_DIR, file_name)) as f:
+            annotations_subgroup = json.load(f).values()  # list of lists of GO terms
+            annotations_subgroup = [set(x) for x in annotations_subgroup]
+            annotations.extend(annotations_subgroup)
+    go_rels.calculate_ic(annotations)  # Pass list of sets of GO terms
+
+
+def _evaluate_annots(go, real_annots, pred_annots):
     total = 0
     p = 0.0
     r = 0.0
-    p_total= 0
-    fps = []
-    fns = []
+    p_total = 0
+    ru = 0.0
+    mi = 0.0
     for i in range(len(real_annots)):
         if len(real_annots[i]) == 0:
             continue
-        tp = set(real_annots[i]).intersection(set(pred_annots[i]))
+        tp = real_annots[i].intersection(pred_annots[i])
         fp = pred_annots[i] - tp
         fn = real_annots[i] - tp
-        fps.append(fp)
-        fns.append(fn)
+        for go_id in fp:
+            mi += go.get_ic(go_id)
+        for go_id in fn:
+            ru += go.get_ic(go_id)
         tpn = len(tp)
         fpn = len(fp)
         fnn = len(fn)
@@ -75,13 +113,16 @@ def _evaluate_annots(real_annots, pred_annots):
             p_total += 1
             precision = tpn / (1.0 * (tpn + fpn))
             p += precision
+    ru /= total
+    mi /= total
     r /= total
     if p_total > 0:
         p /= p_total
     f = 0.0
     if p + r > 0:
         f = 2 * p * r / (p + r)
-    return f, p, r, fps, fns
+    s = math.sqrt(ru * ru + mi * mi)
+    return f, p, r, s
 
 
 class _Ontology(object):

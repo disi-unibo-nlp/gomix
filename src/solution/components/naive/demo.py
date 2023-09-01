@@ -4,7 +4,7 @@ from pathlib import Path
 import json
 sys.path.append(str(Path(__file__).resolve().parents[4]))
 from src.solution.components.naive.NaiveLearner import NaiveLearner
-from src.utils.predictions_evaluation.evaluate import evaluate_with_deepgoplus_method
+from src.utils.predictions_evaluation.evaluate import evaluate_with_deepgoplus_evaluator
 import argparse
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -35,7 +35,7 @@ def main():
     }
 
     print('Evaluating Naive predictions...')
-    evaluate_with_deepgoplus_method(gene_ontology_file_path=args.gene_ontology_file_path, predictions=predictions, ground_truth=test_annotations)
+    evaluate_with_deepgoplus_evaluator(gene_ontology_file_path=args.gene_ontology_file_path, predictions=predictions, ground_truth=test_annotations)
 
 
 if __name__ == '__main__':

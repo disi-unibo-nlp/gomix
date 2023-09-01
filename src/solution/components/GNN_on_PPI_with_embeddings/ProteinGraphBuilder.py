@@ -6,10 +6,7 @@ from torch_geometric.data import Data as GeometricData
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parents[4]))
-from src.utils.load_protein_embedding import load_protein_embedding
-
-THIS_DIR = os.path.dirname(os.path.realpath(__file__))
-ALL_PROTEIN_EMBEDDINGS_DIR = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/all_protein_embeddings/esm2_t48_15B_UR50D')
+from src.utils.load_protein_embedding import load_protein_sequence_embedding
 
 
 class ProteinGraphBuilder:
@@ -55,7 +52,7 @@ class ProteinGraphBuilder:
         # Uncomment if you want to also use edge weights (i.e. interaction scores). Binary should be enough, though.
         # edge_attr = torch.FloatTensor(adj_matrix[np.nonzero(adj_matrix)])
 
-        prot_embeddings = [load_protein_embedding(ALL_PROTEIN_EMBEDDINGS_DIR, prot_id) for prot_id in self._get_sorted_prot_ids()]
+        prot_embeddings = [load_protein_sequence_embedding(prot_id) for prot_id in self._get_sorted_prot_ids()]
         x = torch.stack(prot_embeddings)
         assert(x.size(0) == len(self.prot_id_to_node_idx))
 

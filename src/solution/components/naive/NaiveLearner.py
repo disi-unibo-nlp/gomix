@@ -13,5 +13,5 @@ class NaiveLearner:
 
     def predict(self):
         # It's naive, so it predicts the same for all proteins.
-        top_k_predictions = {k: v for k, v in sorted(self.go_term_freq.items(), key=lambda item: item[1], reverse=True)[:200]}
+        top_k_predictions = {k: v for k, v in sorted(self.go_term_freq.items(), key=lambda item: item[1], reverse=True)[:300]}
         return top_k_predictions

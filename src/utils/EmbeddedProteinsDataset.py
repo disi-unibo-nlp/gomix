@@ -1,6 +1,6 @@
 from torch.utils.data import Dataset
 import torch
-from src.utils.load_protein_embedding import load_protein_embedding
+from typing import Callable
 
 
 def _make_go_term_vocabulary(annotations):
@@ -12,11 +12,11 @@ def _make_go_term_vocabulary(annotations):
 
 
 class EmbeddedProteinsDataset(Dataset):
-    def __init__(self, annotations: dict, embeddings_dir):
+    def __init__(self, annotations: dict, load_prot_embedding: Callable[[str], torch.Tensor]):
         self.prot_ids = list(annotations.keys())
         self.annotations = annotations
-        self.embeddings_dir = embeddings_dir
         self.go_term_to_index = _make_go_term_vocabulary(annotations)
+        self._load_prot_embedding = load_prot_embedding
 
     def __len__(self):
         return len(self.prot_ids)
@@ -24,7 +24,7 @@ class EmbeddedProteinsDataset(Dataset):
     def __getitem__(self, idx):
         prot_id = self.prot_ids[idx]
 
-        prot_embedding = load_protein_embedding(self.embeddings_dir, prot_id)
+        prot_embedding = self._load_prot_embedding(prot_id)
 
         target = torch.zeros(len(self.go_term_to_index))
         for go_term in self.annotations[prot_id]:

@@ -2,7 +2,7 @@ import os
 import subprocess
 import csv
 import shutil
-from src.utils.predictions_evaluation.deepgoplus_evaluator.evaluate import evaluate as evaluate_with_deepgoplus_method
+from src.utils.predictions_evaluation.deepgoplus_evaluator.evaluate import evaluate as _evaluate_with_deepgoplus_method
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 
@@ -12,7 +12,7 @@ def evaluate_with_deepgoplus_evaluator(
     predictions: dict,  # dict: Prot ID -> list of (GO term, score)
     ground_truth: dict,  # dict: Prot ID -> list of GO terms
 ):
-    evaluate_with_deepgoplus_method(gene_ontology_file_path, predictions, ground_truth)
+    _evaluate_with_deepgoplus_method(gene_ontology_file_path, predictions, ground_truth)
 
 
 # It generates an `evaluation_results` sub-folder in dest_dir_path.

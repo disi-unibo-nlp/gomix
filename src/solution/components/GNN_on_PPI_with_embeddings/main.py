@@ -1,7 +1,6 @@
 import pickle
 import os
 import numpy as np
-from collections import defaultdict
 import torch
 import torch.optim as optim
 import torch.nn as nn
@@ -16,7 +15,8 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parents[4]))
 from src.solution.components.GNN_on_PPI_with_embeddings.ProteinGraphBuilder import ProteinGraphBuilder
 from src.solution.components.GNN_on_PPI_with_embeddings.Net import Net
-from src.utils.predictions_evaluation.evaluate import evaluate_with_deepgoplus_method
+from src.utils.predictions_evaluation.evaluate import evaluate_with_deepgoplus_evaluator
+from src.utils.load_protein_embedding import PROT_SEQUENCE_EMBEDDING_SIZE
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 PPI_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/all_proteins_STRING_interactions.json')
@@ -25,8 +25,6 @@ OFFICIAL_TEST_ANNOTS_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/proces
 GENE_ONTOLOGY_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/raw/task_datasets/2016/go.obo')
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu'))
-
-PROT_EMBEDDING_SIZE = 5120  # Number of elements in a single protein embedding vector (`2560` for esm2-3B embeddings, `5120` for esm2-15B embeddings)
 
 
 def main():
@@ -144,7 +142,7 @@ def make_and_train_model_on(graph: GeometricData, graph_ctx: dict) -> Net:
 
 
 def make_model_on_device(graph_ctx: dict) -> Net:
-    return Net(prot_embedding_size=PROT_EMBEDDING_SIZE, num_classes=len(graph_ctx['go_term_to_class_idx'])).to(DEVICE)
+    return Net(prot_embedding_size=PROT_SEQUENCE_EMBEDDING_SIZE, num_classes=len(graph_ctx['go_term_to_class_idx'])).to(DEVICE)
 
 
 @torch.no_grad()
@@ -249,7 +247,7 @@ def _validate_model(model, val_loader, loss_fn: torch.nn.Module):
 
     performances_by_threshold = {}
 
-    for threshold in np.round(np.arange(0.01, 0.6, 0.01), 2):
+    for threshold in np.round(np.arange(0.01, 0.9, 0.01), 2):
         polarized_preds = (all_preds >= threshold).float()
         true_positives = (polarized_preds * all_targets).sum(dim=1)
         false_positives = (polarized_preds * (1 - all_targets)).sum(dim=1)
@@ -271,7 +269,7 @@ def _evaluate_for_testing_with_official_criteria(model: torch.nn.Module, graph: 
     predictions = predict_and_transform_predictions_to_dict(model, test_prot_ids, graph, graph_ctx)
 
     print('Test results:')
-    evaluate_with_deepgoplus_method(
+    evaluate_with_deepgoplus_evaluator(
         gene_ontology_file_path=GENE_ONTOLOGY_FILE_PATH,
         predictions=predictions,
         ground_truth=test_annotations

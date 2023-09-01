@@ -12,19 +12,16 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parents[4]))
 from src.solution.components.FC_on_embeddings.ProteinToGOModel import ProteinToGOModel
 from src.utils.EmbeddedProteinsDataset import EmbeddedProteinsDataset
-from src.utils.predictions_evaluation.evaluate import evaluate_with_deepgoplus_method
-from src.utils.load_protein_embedding import load_protein_embedding
+from src.utils.predictions_evaluation.evaluate import evaluate_with_deepgoplus_evaluator
+from src.utils.load_protein_embedding import load_protein_sequence_embedding, PROT_SEQUENCE_EMBEDDING_SIZE
 torch.manual_seed(0)
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 PROPAGATED_TRAIN_ANNOTS_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/propagated_annotations/train.json')
 OFFICIAL_TEST_ANNOTS_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/annotations/test.json')
-ALL_PROTEIN_EMBEDDINGS_DIR = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/all_protein_embeddings/esm2_t48_15B_UR50D')
 GENE_ONTOLOGY_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/raw/task_datasets/2016/go.obo')
 
-DEVICE = torch.device('cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu'))
-
-PROT_EMBEDDING_SIZE = 5120  # Number of elements in a single protein embedding vector (`2560` for esm2-3B embeddings, `5120` for esm2-15B embeddings)
+DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'mps')
 
 
 def main():
@@ -38,14 +35,14 @@ def main():
 
 def make_and_train_model_on(dataset) -> ProteinToGOModel:
     train_set, val_set = train_test_split(dataset, test_size=0.2)
-    train_dataloader = DataLoader(train_set, batch_size=32, shuffle=True, drop_last=True)
+    train_dataloader = DataLoader(train_set, batch_size=64, shuffle=True, drop_last=True)
     val_dataloader = DataLoader(val_set, batch_size=64)
 
     print(f"Training using device: {DEVICE}")
 
     model = make_model_on_device(dataset.go_term_to_index)
     optimizer = optim.Adam(model.parameters(), lr=1e-4)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=13, gamma=0.1)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
     loss_fn = torch.nn.BCEWithLogitsLoss()
 
     best_val_f_max = -np.inf
@@ -95,17 +92,18 @@ def make_and_train_model_on(dataset) -> ProteinToGOModel:
 
 
 def make_model_on_device(go_term_to_index: dict):
-    return ProteinToGOModel(protein_embedding_size=PROT_EMBEDDING_SIZE, output_size=len(go_term_to_index)).to(DEVICE)
+    return ProteinToGOModel(protein_embedding_size=PROT_SEQUENCE_EMBEDDING_SIZE, output_size=len(go_term_to_index)).to(DEVICE)
+
+
+def make_training_dataset_with_annotations(annots) -> EmbeddedProteinsDataset:
+    return EmbeddedProteinsDataset(annotations=annots, load_prot_embedding=load_protein_sequence_embedding)
 
 
 def _make_training_dataset():
     with open(PROPAGATED_TRAIN_ANNOTS_FILE_PATH, 'r') as f:
         train_annotations = json.load(f)
 
-    return EmbeddedProteinsDataset(
-        annotations=train_annotations,
-        embeddings_dir=ALL_PROTEIN_EMBEDDINGS_DIR,
-    )
+    return make_training_dataset_with_annotations(train_annotations)
 
 
 def _evaluate_for_validation(model, dataloader, loss_fn):
@@ -128,7 +126,7 @@ def _evaluate_for_validation(model, dataloader, loss_fn):
 
     performances_by_threshold = {}
 
-    for threshold in np.round(np.arange(0.01, 0.6, 0.01), 2):
+    for threshold in np.round(np.arange(0.01, 0.9, 0.01), 2):
         polarized_preds = (all_preds >= threshold).float()
         true_positives = (polarized_preds * all_targets).sum(dim=1)
         false_positives = (polarized_preds * (1 - all_targets)).sum(dim=1)
@@ -148,14 +146,14 @@ def _evaluate_for_testing_with_official_criteria(model, go_term_to_index: dict):
 
     predictions = predict_and_transform_predictions_to_dict(model, prot_ids, go_term_to_index)
 
-    evaluate_with_deepgoplus_method(
+    evaluate_with_deepgoplus_evaluator(
         gene_ontology_file_path=GENE_ONTOLOGY_FILE_PATH,
         predictions=predictions,
         ground_truth=test_annotations
     )
 
 
-def predict_and_transform_predictions_to_dict(model, prot_ids: List[str], go_term_to_index: dict) -> dict:
+def predict_and_transform_predictions_to_dict(model: ProteinToGOModel, prot_ids: List[str], go_term_to_index: dict) -> dict:
     index_to_go_term = {v: k for k, v in go_term_to_index.items()}
 
     prev_device = _get_model_device(model)
@@ -166,7 +164,7 @@ def predict_and_transform_predictions_to_dict(model, prot_ids: List[str], go_ter
         batch_size = 256
         for i in range(0, len(prot_ids), batch_size):
             batch_prot_ids = prot_ids[i:i + batch_size]
-            batch_prot_embeddings = torch.stack([load_protein_embedding(ALL_PROTEIN_EMBEDDINGS_DIR, prot_id) for prot_id in batch_prot_ids])
+            batch_prot_embeddings = torch.stack([load_protein_sequence_embedding(prot_id) for prot_id in batch_prot_ids])
 
             preds = model.predict(batch_prot_embeddings.to(DEVICE))
             top_scores, top_indices = torch.topk(preds, 140)  # Get the top k scores along with their indices

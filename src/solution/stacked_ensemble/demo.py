@@ -7,14 +7,13 @@ from typing import List, Tuple
 sys.path.append(str(Path(__file__).resolve().parents[3]))
 import random
 import torch
-from src.utils.EmbeddedProteinsDataset import EmbeddedProteinsDataset
 import argparse
 from src.solution.components.naive.NaiveLearner import NaiveLearner
 from src.solution.components.diamondscore.DiamondScoreLearner import DiamondScoreLearner
 from src.solution.components.interactionscore.InteractionScoreLearner import InteractionScoreLearner
-from src.solution.components.FC_on_embeddings.main import ALL_PROTEIN_EMBEDDINGS_DIR, \
-    make_and_train_model_on as make_and_train_fc_on_embeddings_model, \
+from src.solution.components.FC_on_embeddings.main import make_and_train_model_on as make_and_train_fc_on_embeddings_model, \
     make_model_on_device as make_fc_on_embeddings_model, \
+    make_training_dataset_with_annotations as make_fc_training_dataset, \
     predict_and_transform_predictions_to_dict as predict_with_nn_model_and_transform_preds_to_dict
 from src.solution.components.GNN_on_PPI_with_embeddings.main import build_whole_graph_from_scratch, \
     make_and_train_model_on as make_and_train_gnn_model, \
@@ -22,13 +21,15 @@ from src.solution.components.GNN_on_PPI_with_embeddings.main import build_whole_
     predict_and_transform_predictions_to_dict as predict_with_gnn_model_and_transform_preds_to_dict
 from src.solution.stacked_ensemble.StackingMetaLearner import StackingMetaLearner
 from src.solution.stacked_ensemble.Level1Dataset import Level1Dataset
-from src.utils.predictions_evaluation.evaluate import evaluate_with_deepgoplus_method
+from src.utils.predictions_evaluation.evaluate import evaluate_with_deepgoplus_evaluator
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 GENE_ONTOLOGY_FILE_PATH = os.path.join(THIS_DIR, '../../../data/raw/task_datasets/2016/go.obo')
 ALL_PROTEINS_DIAMOND_SCORES_FILE_PATH = os.path.join(THIS_DIR, '../../../data/processed/task_datasets/2016/all_proteins_diamond.res')
 PPI_FILE_PATH = os.path.join(THIS_DIR, '../../../data/processed/task_datasets/2016/all_proteins_STRING_interactions.json')
 CHECKPOINTS_DIR = os.path.join(THIS_DIR, '../../../data/temp_cache/model_checkpoints')
+
+USE_GNN_COMPONENT = False  # We don't use it for now because of low performacne gain. TODO: improve it, then re-integrate it.
 
 
 def main():
@@ -105,7 +106,7 @@ def main():
     final_predictions = level1_test_dataset.convert_predictions_array_to_dict(final_predictions)
 
     print('\nTest results:')
-    evaluate_with_deepgoplus_method(
+    evaluate_with_deepgoplus_evaluator(
         gene_ontology_file_path=GENE_ONTOLOGY_FILE_PATH,
         predictions=final_predictions,
         ground_truth=test_annotations
@@ -142,7 +143,8 @@ def train_base_models_and_generate_level1_predictions(train_annotations: dict, t
     # The trained models will be saved to disk, so that they can be re-used later in this function.
     # Why not keeping them in memory? Because they're too big to keep them all in memory at once.
     go_term_to_nn_output_index, = train_neural_fc_on_embeddings(train_annotations)
-    graph, graph_ctx = train_gnn_model_with_annotations(train_annotations)
+    if USE_GNN_COMPONENT:
+        graph, graph_ctx = train_gnn_model_with_annotations(train_annotations)
 
     """
     Generate predictions (without overloading memory).
@@ -161,19 +163,20 @@ def train_base_models_and_generate_level1_predictions(train_annotations: dict, t
     )
     del nn_model
 
-    gnn_model = make_gnn_model(graph_ctx=graph_ctx)
-    load_checkpoint(model=gnn_model, model_name='gnn')
-    predictions.append(
-        predict_with_gnn_model_and_transform_preds_to_dict(model=gnn_model, prot_ids=target_prot_ids, graph=graph, graph_ctx=graph_ctx)
-    )
-    del gnn_model
+    if USE_GNN_COMPONENT:
+        gnn_model = make_gnn_model(graph_ctx=graph_ctx)
+        load_checkpoint(model=gnn_model, model_name='gnn')
+        predictions.append(
+            predict_with_gnn_model_and_transform_preds_to_dict(model=gnn_model, prot_ids=target_prot_ids, graph=graph, graph_ctx=graph_ctx)
+        )
+        del gnn_model
 
     return predictions
 
 
 def train_neural_fc_on_embeddings(train_annotations) -> Tuple[dict]:
     print(f"\nAbout to train the NN model on {len(train_annotations)} proteins.")
-    dataset = EmbeddedProteinsDataset(annotations=train_annotations, embeddings_dir=ALL_PROTEIN_EMBEDDINGS_DIR)
+    dataset = make_fc_training_dataset(train_annotations)
     model = make_and_train_fc_on_embeddings_model(dataset)
     save_checkpoint(model=model, model_name='fc_on_embeddings')
     return dataset.go_term_to_index,
