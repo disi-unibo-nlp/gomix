@@ -6,7 +6,7 @@ import argparse
 def process_pickle_files(input_dir, output_dir):
     all_prot_id_to_seq = {}
     for file in os.listdir(input_dir):
-        if file.endswith(".pkl"):
+        if file.endswith("_data.pkl"):
             df = pd.read_pickle(os.path.join(input_dir, file))
             for idx, row in df.iterrows():
                 protein_id = row['proteins']
