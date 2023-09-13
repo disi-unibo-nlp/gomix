@@ -16,7 +16,7 @@ sys.path.append(str(Path(__file__).resolve().parents[4]))
 from src.solution.components.GNN_on_PPI_with_embeddings.ProteinGraphBuilder import ProteinGraphBuilder
 from src.solution.components.GNN_on_PPI_with_embeddings.Net import Net
 from src.utils.predictions_evaluation.evaluate import evaluate_with_deepgoplus_evaluator
-from src.utils.load_protein_embedding import PROT_SEQUENCE_EMBEDDING_SIZE
+from src.utils.ProteinEmbeddingLoader import ProteinEmbeddingLoader
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 PPI_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/all_proteins_STRING_interactions.json')
@@ -25,6 +25,8 @@ OFFICIAL_TEST_ANNOTS_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/proces
 GENE_ONTOLOGY_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/raw/task_datasets/2016/go.obo')
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu'))
+
+PROT_EMBEDDING_LOADER = ProteinEmbeddingLoader()
 
 
 def main():
@@ -61,7 +63,7 @@ def _build_or_load_whole_graph():
 
 def build_whole_graph_from_scratch(train_annotations: dict) -> tuple:
     # Note: the nodes in PPI file are not only the proteins in train+val set but also those in test set.
-    graph_builder = ProteinGraphBuilder(ppi_file_path=PPI_FILE_PATH)
+    graph_builder = ProteinGraphBuilder(ppi_file_path=PPI_FILE_PATH, prot_embedding_loader=PROT_EMBEDDING_LOADER)
     graph_builder.set_targets(train_annotations)
     graph: GeometricData = graph_builder.build()
     graph.validate(raise_on_error=True)
@@ -142,7 +144,10 @@ def make_and_train_model_on(graph: GeometricData, graph_ctx: dict) -> Net:
 
 
 def make_model_on_device(graph_ctx: dict) -> Net:
-    return Net(prot_embedding_size=PROT_SEQUENCE_EMBEDDING_SIZE, num_classes=len(graph_ctx['go_term_to_class_idx'])).to(DEVICE)
+    return Net(
+        prot_embedding_size=PROT_EMBEDDING_LOADER.get_embedding_size(),
+        num_classes=len(graph_ctx['go_term_to_class_idx'])
+    ).to(DEVICE)
 
 
 @torch.no_grad()

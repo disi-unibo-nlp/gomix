@@ -6,7 +6,22 @@ This task is the topic of the [CAFA](https://genomebiology.biomedcentral.com/art
 
 ## Dataset
 
-- `uniprot_swiss_entries.dat` comes from https://www.uniprot.org/help/downloads
+- `data/raw/task_datasets/CAFA3` comes from https://github.com/bio-ontology-research-group/deepgoplus
+- `data/raw/Uniprot/uniprot_swiss_entries.dat` comes from https://www.uniprot.org/help/downloads
+- `data/raw/InterPro/58.0__match_complete.xml` comes from https://ftp.ebi.ac.uk/pub/databases/interpro/releases/58.0/
+
+### "2016" dataset
+
+In `data/raw/task_datasets/2016`. Downloaded from https://github.com/bio-ontology-research-group/deepgoplus.
+In the DeepGOPlus paper, it was the dataset that's used to compare DeepGOPlus with GOLabeler and DeepText2GO.
+
+This same dataset is also used by other good-performing papers:
+- PANDA2 (best performance)
+- DeepGOPlus
+- DeepText2GO (https://www.sciencedirect.com/science/article/pii/S1046202318300021#s0030)
+- GoLabeler
+
+The .pkl files are pickle files containing a pandas dataframe.
 
 ## Methods
 

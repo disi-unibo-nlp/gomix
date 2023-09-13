@@ -13,7 +13,7 @@ sys.path.append(str(Path(__file__).resolve().parents[4]))
 from src.solution.components.FC_on_embeddings.ProteinToGOModel import ProteinToGOModel
 from src.utils.EmbeddedProteinsDataset import EmbeddedProteinsDataset
 from src.utils.predictions_evaluation.evaluate import evaluate_with_deepgoplus_evaluator
-from src.utils.load_protein_embedding import load_protein_sequence_embedding, PROT_SEQUENCE_EMBEDDING_SIZE
+from src.utils.ProteinEmbeddingLoader import ProteinEmbeddingLoader
 torch.manual_seed(0)
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -22,6 +22,8 @@ OFFICIAL_TEST_ANNOTS_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/proces
 GENE_ONTOLOGY_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/raw/task_datasets/2016/go.obo')
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'mps')
+
+PROT_EMBEDDING_LOADER = ProteinEmbeddingLoader()
 
 
 def main():
@@ -92,11 +94,14 @@ def make_and_train_model_on(dataset) -> ProteinToGOModel:
 
 
 def make_model_on_device(go_term_to_index: dict):
-    return ProteinToGOModel(protein_embedding_size=PROT_SEQUENCE_EMBEDDING_SIZE, output_size=len(go_term_to_index)).to(DEVICE)
+    return ProteinToGOModel(
+        protein_embedding_size=PROT_EMBEDDING_LOADER.get_embedding_size(),
+        output_size=len(go_term_to_index)
+    ).to(DEVICE)
 
 
 def make_training_dataset_with_annotations(annots) -> EmbeddedProteinsDataset:
-    return EmbeddedProteinsDataset(annotations=annots, load_prot_embedding=load_protein_sequence_embedding)
+    return EmbeddedProteinsDataset(annotations=annots, prot_embedding_loader=PROT_EMBEDDING_LOADER)
 
 
 def _make_training_dataset():
@@ -164,7 +169,7 @@ def predict_and_transform_predictions_to_dict(model: ProteinToGOModel, prot_ids:
         batch_size = 256
         for i in range(0, len(prot_ids), batch_size):
             batch_prot_ids = prot_ids[i:i + batch_size]
-            batch_prot_embeddings = torch.stack([load_protein_sequence_embedding(prot_id) for prot_id in batch_prot_ids])
+            batch_prot_embeddings = torch.stack([PROT_EMBEDDING_LOADER.load(prot_id) for prot_id in batch_prot_ids])
 
             preds = model.predict(batch_prot_embeddings.to(DEVICE))
             top_scores, top_indices = torch.topk(preds, 140)  # Get the top k scores along with their indices

@@ -6,11 +6,11 @@ from torch_geometric.data import Data as GeometricData
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parents[4]))
-from src.utils.load_protein_embedding import load_protein_sequence_embedding
+from src.utils.ProteinEmbeddingLoader import ProteinEmbeddingLoader
 
 
 class ProteinGraphBuilder:
-    def __init__(self, ppi_file_path: str):
+    def __init__(self, ppi_file_path: str, prot_embedding_loader: ProteinEmbeddingLoader):
         # load protein-protein similarity network
         # format: { protein1: { protein2: score2, protein3: score3, ... }, ... }
         with open(ppi_file_path) as fp:
@@ -20,6 +20,8 @@ class ProteinGraphBuilder:
 
         self.prot_id_to_node_idx = {prot_id: i for i, prot_id in enumerate(self._ppi_net.keys())}
         self.go_term_to_class_idx = None
+
+        self._prot_embedding_loader = prot_embedding_loader
 
     # prot_annotations is a mapping from protein -> GO term
     # (format: { protein1: [term1, term2], protein2: [term3] })
@@ -52,7 +54,7 @@ class ProteinGraphBuilder:
         # Uncomment if you want to also use edge weights (i.e. interaction scores). Binary should be enough, though.
         # edge_attr = torch.FloatTensor(adj_matrix[np.nonzero(adj_matrix)])
 
-        prot_embeddings = [load_protein_sequence_embedding(prot_id) for prot_id in self._get_sorted_prot_ids()]
+        prot_embeddings = [self._prot_embedding_loader.load(prot_id) for prot_id in self._get_sorted_prot_ids()]
         x = torch.stack(prot_embeddings)
         assert(x.size(0) == len(self.prot_id_to_node_idx))
 
