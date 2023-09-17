@@ -37,19 +37,13 @@ The solution we propose is a stacked ensemble model that uses multiple component
 - **Naive**: always predicts the most frequent GO terms. (see the DeepGOPlus paper)
 - **DiamondScore**: uses BLAST to find similar proteins and then uses their GO terms. (see the DeepGOPlus paper)
 - **InteractionScore**: uses the PPI network to find interacting proteins and then uses their GO terms (similarly to DiamondScore).
+- **EmbeddingSimilarityScore**: uses cosine similarity between protein _sequence_ embeddings to find similar proteins and then uses their GO terms (similarly to DiamondScore, except the cosine similarities are re-weighted for better performance, esp. for high _k_).
 - **FC** on protein embeddings
 - **GNN** on graph with protein embeddings as node features and PPI edges
 
 The last 2 are the only ones based on neural networks training.
 
 We're currently testing on a dataset called "2016" and taken from the DeepGOPlus paper. We'll also need to test on other datasets in the same paper and others.
-
-### Current best results
-
-On 2016 dataset (using stacked ensemble with the components above, **except GNN**):
-- **MFO** | F_max: 0.584 (optimal threshold=0.19) | S_min: 8.762 | AUPR: 0.536
-- **BPO** | F_max: 0.496 (optimal threshold=0.29) | S_min: 32.930 | AUPR: 0.432
-- **CCO** | F_max: 0.714 (optimal threshold=0.36) | S_min: 7.358 | AUPR: 0.722
 
 ### Ideas to improve the current solution
 
@@ -70,6 +64,15 @@ On 2016 dataset (using stacked ensemble with the components above, **except GNN*
 - Add as input the 3D structure of the proteins, coming from DBs like the Protein Data Bank (PDB). [Here](https://www.nature.com/articles/s41467-021-23303-9) is a Nature paper that uses it to predict protein function.
 - Add information from other PPI networks besides STRING.
 - Take inspiration from NetGO papers ([here](https://github.com/paccanarolab/netgo)'s an unofficial implementation of the oldest one).
+
+## Current best results
+
+### On 2016 dataset
+
+Stacked ensemble with 5 of the 6 components **(GNN was excluded)**, using **ESM2 15B** sequence embeddings:
+- **MFO** | F_max: 0.594 (optimal threshold=0.19) | S_min: 8.651 | AUPR: 0.534
+- **BPO** | F_max: 0.493 (optimal threshold=0.32) | S_min: 33.050 | AUPR: 0.426
+- **CCO** | F_max: 0.722 (optimal threshold=0.33) | S_min: 7.138 | AUPR: 0.728
 
 ## Notes for paper writing
 
