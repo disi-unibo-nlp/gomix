@@ -32,7 +32,7 @@ ALL_PROTEINS_DIAMOND_SCORES_FILE_PATH = os.path.join(THIS_DIR, '../../../data/pr
 PPI_FILE_PATH = os.path.join(THIS_DIR, '../../../data/processed/task_datasets/2016/all_proteins_STRING_interactions.json')
 CHECKPOINTS_DIR = os.path.join(THIS_DIR, '../../../data/temp_cache/model_checkpoints')
 
-USE_GNN_COMPONENT = False  # We don't use it for now because of low performance gain. TODO: improve it, then re-integrate it.
+USE_GNN_COMPONENT = True  # For now, including the GNN component has low performance gain.
 
 
 def main():

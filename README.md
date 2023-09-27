@@ -48,6 +48,7 @@ We're currently testing on a dataset called "2016" and taken from the DeepGOPlus
 ### Ideas to improve the current solution
 
 **Minor:**
+- Reduce the number of training GO terms considered, like DeepGOPlus did (they sued only the GO terms that were associated to at leat 50 proteins in the training set). This way you can use more memory-demanding methods.
 - Change the proportion of train-test split for training the base models to generate the level-1 train set.
 - Try using dropout instead of batch normalization in FC-on-embeddings.
 - Try reducing the number of linear regressors used in the stacked ensemble.
@@ -55,6 +56,7 @@ We're currently testing on a dataset called "2016" and taken from the DeepGOPlus
 - Try using a different criterion (other than general F_max) for early stopping when training NN models.
 
 **Major:**
+- Think of ways to improve the GNN component, which gives low performance gain when included in the ensemble.
 - Use protein features from InterPro as input, like other papers did (e.g., [NetGO](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6602452/), [NetGO 2.0](https://academic.oup.com/nar/article/49/W1/W469/6285266) and [DeepGraphGO](https://academic.oup.com/bioinformatics/article/37/Supplement_1/i262/6319663)).
 - Use text embeddings of protein-associated documents as input, a bit like [NetGO 2.0](https://academic.oup.com/nar/article/49/W1/W469/6285266#267025483) did (see "LR-text").
 - Add [Proteinfer](https://google-research.github.io/proteinfer/) as component ([GitHub](https://github.com/google-research/proteinfer/tree/master)).
