@@ -12,11 +12,11 @@ import argparse
 EMBEDDING_TYPES = ['sequence']
 
 
-def _run_demo():
-    """
-    Example usage:
-    python src/solution/components/embeddingsimilarityscore/main.py data/processed/task_datasets/2016/propagated_annotations/train.json data/processed/task_datasets/2016/annotations/test.json data/raw/task_datasets/2016/go.obo
-    """
+"""
+Example usage:
+python src/solution/components/embeddingsimilarityscore/main.py data/processed/task_datasets/2016/propagated_annotations/train.json data/processed/task_datasets/2016/annotations/test.json data/raw/task_datasets/2016/go.obo
+"""
+if __name__ == '__main__':
     random.seed(0)
     parser = argparse.ArgumentParser()
     parser.add_argument("train_annotations_file_path", help="Path to train annotations file")
@@ -47,7 +47,3 @@ def _run_demo():
         predictions=predictions,
         ground_truth=test_annotations
     )
-
-
-if __name__ == '__main__':
-    _run_demo()
