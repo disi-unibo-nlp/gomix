@@ -13,7 +13,7 @@ EMBEDDING_TYPES = ['sequence']
 
 
 """
-Example usage:
+To run the demo:
 python src/solution/components/embeddingsimilarityscore/main.py data/processed/task_datasets/2016/propagated_annotations/train.json data/processed/task_datasets/2016/annotations/test.json data/raw/task_datasets/2016/go.obo
 """
 if __name__ == '__main__':
