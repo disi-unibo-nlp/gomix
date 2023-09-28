@@ -10,6 +10,8 @@ This task is the topic of the [CAFA](https://genomebiology.biomedcentral.com/art
 - `data/raw/Uniprot/uniprot_swiss_entries.dat` comes from https://www.uniprot.org/help/downloads
 - `data/raw/InterPro/58.0__match_complete.xml` comes from https://ftp.ebi.ac.uk/pub/databases/interpro/releases/58.0/
 
+All around the code, when we refer to "TASK_DATASET_PATH" we usually mean one of the subfolders of `data/processed/task_datasets`.
+
 ### "2016" dataset
 
 In `data/raw/task_datasets/2016`. Downloaded from https://github.com/bio-ontology-research-group/deepgoplus.
@@ -87,7 +89,7 @@ We could include in the final paper the differential analysis of various archite
 - different PPI nets (provided that we can get to improve the performance based on the information contained)
 - different neighbor sampling thresholds
 - different number of neurons or layers
-- ablation of weak learners in the ensemble
+- ablation of base learners in the ensemble
 
 ### Contributions of this research
 

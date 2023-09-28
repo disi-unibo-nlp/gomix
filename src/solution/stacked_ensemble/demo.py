@@ -6,7 +6,6 @@ from itertools import chain
 from typing import List, Tuple
 import random
 import torch
-import argparse
 sys.path.append(str(Path(__file__).resolve().parents[3]))
 from src.solution.components.naive.NaiveLearner import NaiveLearner
 from src.solution.components.diamondscore.DiamondScoreLearner import DiamondScoreLearner
@@ -26,33 +25,33 @@ from src.solution.stacked_ensemble.Level1Dataset import Level1Dataset
 from src.utils.ProteinEmbeddingLoader import ProteinEmbeddingLoader
 from src.utils.predictions_evaluation.evaluate import evaluate_with_deepgoplus_evaluator
 
-THIS_DIR = os.path.dirname(os.path.realpath(__file__))
-GENE_ONTOLOGY_FILE_PATH = os.path.join(THIS_DIR, '../../../data/raw/task_datasets/2016/go.obo')
-ALL_PROTEINS_DIAMOND_SCORES_FILE_PATH = os.path.join(THIS_DIR, '../../../data/processed/task_datasets/2016/all_proteins_diamond.res')
-PPI_FILE_PATH = os.path.join(THIS_DIR, '../../../data/processed/task_datasets/2016/all_proteins_STRING_interactions.json')
-CHECKPOINTS_DIR = os.path.join(THIS_DIR, '../../../data/temp_cache/model_checkpoints')
+TASK_DATASET_PATH = os.environ["TASK_DATASET_PATH"]
+assert TASK_DATASET_PATH, 'Environment variable \'TASK_DATASET_PATH\' must be declared.'
+
+GENE_ONTOLOGY_FILE_PATH = os.path.join(TASK_DATASET_PATH, 'go.obo')
+ALL_PROTEINS_DIAMOND_SCORES_FILE_PATH = os.path.join(TASK_DATASET_PATH, 'all_proteins_diamond.res')
+PPI_FILE_PATH = os.path.join(TASK_DATASET_PATH, 'all_proteins_STRING_interactions.json')
+
+CHECKPOINTS_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../../data/temp_cache/model_checkpoints')
 
 USE_GNN_COMPONENT = True  # For now, including the GNN component has low performance gain.
 
 
+"""
+Example usage:
+TASK_DATASET_PATH=data/processed/task_datasets/2016 python src/solution/stacked_ensemble/demo.py
+"""
 def main():
-    """
-    Example usage:
-
-    python src/solution/stacked_ensemble/demo.py data/processed/task_datasets/2016/propagated_annotations/train.json data/processed/task_datasets/2016/annotations/test.json
-    """
-    parser = argparse.ArgumentParser()
-    parser.add_argument("train_annotations_file_path", help="Path to train annotations file")
-    parser.add_argument("test_annotations_file_path", help="Path to test annotations file")
-    args = parser.parse_args()
+    train_annotations_file_path = os.path.join(TASK_DATASET_PATH, 'propagated_annotations', 'train.json')
+    test_annotations_file_path = os.path.join(TASK_DATASET_PATH, 'annotations', 'test.json')
 
     random.seed(0)
     torch.manual_seed(0)
 
-    with open(args.train_annotations_file_path, 'r') as f:
+    with open(train_annotations_file_path, 'r') as f:
         train_annotations = json.load(f)  # dict: prot ID -> list of GO terms
 
-    with open(args.test_annotations_file_path, 'r') as f:
+    with open(test_annotations_file_path, 'r') as f:
         test_annotations = json.load(f)  # dict: prot ID -> list of GO terms
 
     print('Train set | total proteins:', len(train_annotations), '| total GO terms:', len(set(chain.from_iterable(train_annotations.values()))))

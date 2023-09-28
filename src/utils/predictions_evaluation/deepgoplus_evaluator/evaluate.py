@@ -3,10 +3,13 @@ from collections import deque, Counter
 import math
 import numpy as np
 import json
+import os
 
-THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-# TODO: make this a parameter. It's not right to assume that the dataset we're using is specifically the '2016' one. Be careful: it's probably necessary to use propagated annotations (also for test set). Double-check by seeing how the S_min mesaure is computed.
-PROPAGATED_ANNOTATIONS_DIR = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/propagated_annotations')
+TASK_DATASET_PATH = os.environ["TASK_DATASET_PATH"]
+assert TASK_DATASET_PATH, 'Environment variable \'TASK_DATASET_PATH\' must be declared.'
+
+# TODO: Be careful: it's probably necessary to use propagated annotations (also for test set). Double-check by seeing how the S_min mesaure is computed.
+PROPAGATED_ANNOTATIONS_DIR = os.path.join(TASK_DATASET_PATH, 'propagated_annotations')
 
 # Code adapted from https://github.com/bio-ontology-research-group/deepgoplus
 

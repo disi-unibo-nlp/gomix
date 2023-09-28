@@ -18,11 +18,13 @@ from src.solution.components.GNN_on_PPI_with_embeddings.Net import Net
 from src.utils.predictions_evaluation.evaluate import evaluate_with_deepgoplus_evaluator
 from src.utils.ProteinEmbeddingLoader import ProteinEmbeddingLoader
 
-THIS_DIR = os.path.dirname(os.path.realpath(__file__))
-PPI_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/all_proteins_STRING_interactions.json')
-TRAIN_ANNOTATIONS_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/propagated_annotations/train.json')
-OFFICIAL_TEST_ANNOTS_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/annotations/test.json')
-GENE_ONTOLOGY_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/raw/task_datasets/2016/go.obo')
+TASK_DATASET_PATH = os.environ['TASK_DATASET_PATH']
+assert TASK_DATASET_PATH, 'Environment variable \'TASK_DATASET_PATH\' must be declared.'
+
+PPI_FILE_PATH = os.path.join(TASK_DATASET_PATH, 'all_proteins_STRING_interactions.json')
+TRAIN_ANNOTATIONS_FILE_PATH = os.path.join(TASK_DATASET_PATH, 'propagated_annotations/train.json')
+OFFICIAL_TEST_ANNOTS_FILE_PATH = os.path.join(TASK_DATASET_PATH, 'annotations/test.json')
+GENE_ONTOLOGY_FILE_PATH = os.path.join(TASK_DATASET_PATH, 'go.obo')
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu'))
 
@@ -44,7 +46,7 @@ def main():
 
 
 def _build_or_load_whole_graph():
-    pickle_file_path = os.path.join(THIS_DIR, '../../../../data/temp_cache/GNN_on_PPI_with_embeddings', 'all_proteins_ppi_graph.pickle')
+    pickle_file_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../../../data/temp_cache/GNN_on_PPI_with_embeddings/all_proteins_ppi_graph.pickle')
     if os.path.exists(pickle_file_path):
         print("Loading graph from pickle cache file.")
         with open(pickle_file_path, 'rb') as file:

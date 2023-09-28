@@ -16,10 +16,12 @@ from src.utils.predictions_evaluation.evaluate import evaluate_with_deepgoplus_e
 from src.utils.ProteinEmbeddingLoader import ProteinEmbeddingLoader
 torch.manual_seed(0)
 
-THIS_DIR = os.path.dirname(os.path.realpath(__file__))
-PROPAGATED_TRAIN_ANNOTS_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/propagated_annotations/train.json')
-OFFICIAL_TEST_ANNOTS_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/processed/task_datasets/2016/annotations/test.json')
-GENE_ONTOLOGY_FILE_PATH = os.path.join(THIS_DIR, '../../../../data/raw/task_datasets/2016/go.obo')
+TASK_DATASET_PATH = os.environ["TASK_DATASET_PATH"]
+assert TASK_DATASET_PATH, 'Environment variable \'TASK_DATASET_PATH\' must be declared.'
+
+PROPAGATED_TRAIN_ANNOTS_FILE_PATH = os.path.join(TASK_DATASET_PATH, 'propagated_annotations/train.json')
+OFFICIAL_TEST_ANNOTS_FILE_PATH = os.path.join(TASK_DATASET_PATH, 'annotations/test.json')
+GENE_ONTOLOGY_FILE_PATH = os.path.join(TASK_DATASET_PATH, 'go.obo')
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'mps')
 

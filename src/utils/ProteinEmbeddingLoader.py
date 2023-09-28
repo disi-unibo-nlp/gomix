@@ -4,10 +4,12 @@ import pickle
 from sklearn.decomposition import TruncatedSVD
 from typing import List, Optional
 
-THIS_DIR = os.path.dirname(os.path.realpath(__file__))
-ALL_PROTEIN_SEQUENCE_EMBEDDINGS_DIR = os.path.join(THIS_DIR, '../../data/processed/task_datasets/2016/all_protein_sequence_embeddings/esm2_t48_15B_UR50D')
-ALL_PROTEIN_TEXT_FEATURES_EMBEDDINGS_DIR = os.path.join(THIS_DIR, '../../data/processed/task_datasets/2016/all_protein_text_features_OpenAI_embeddings')
-ALL_PROTEIN_INTERPRO_FEATURES_FILE = os.path.join(THIS_DIR, '../../data/processed/task_datasets/2016/all_protein_interpro_features.pickle')
+TASK_DATASET_PATH = os.environ["TASK_DATASET_PATH"]
+assert TASK_DATASET_PATH, 'Environment variable \'TASK_DATASET_PATH\' must be declared.'
+
+ALL_PROTEIN_SEQUENCE_EMBEDDINGS_DIR = os.path.join(TASK_DATASET_PATH, 'all_protein_sequence_embeddings/esm2_t48_15B_UR50D')
+ALL_PROTEIN_TEXT_FEATURES_EMBEDDINGS_DIR = os.path.join(TASK_DATASET_PATH, 'all_protein_text_features_OpenAI_embeddings')
+ALL_PROTEIN_INTERPRO_FEATURES_FILE = os.path.join(TASK_DATASET_PATH, 'all_protein_interpro_features.pickle')
 
 
 class ProteinEmbeddingLoader:
