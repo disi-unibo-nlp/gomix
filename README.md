@@ -18,7 +18,7 @@ In `data/raw/task_datasets/2016`. Downloaded from https://github.com/bio-ontolog
 In the DeepGOPlus paper, it was the dataset that's used to compare DeepGOPlus with GOLabeler and DeepText2GO.
 
 This same dataset is also used by other good-performing papers:
-- PANDA2 (best performance)
+- PANDA2
 - DeepGOPlus
 - DeepText2GO (https://www.sciencedirect.com/science/article/pii/S1046202318300021#s0030)
 - GoLabeler
@@ -44,8 +44,6 @@ The solution we propose is a stacked ensemble model that uses multiple component
 - **GNN** on graph with protein embeddings as node features and PPI edges
 
 The last 2 are the only ones based on neural networks training.
-
-We're currently testing on a dataset called "2016" and taken from the DeepGOPlus paper. We'll also need to test on other datasets in the same paper and others.
 
 ### Ideas to improve the current solution
 
@@ -77,6 +75,11 @@ Stacked ensemble with 5 of the 6 components **(GNN was excluded)**, using **ESM2
 - **MFO** | F_max: 0.594 (optimal threshold=0.19) | S_min: 8.651 | AUPR: 0.534
 - **BPO** | F_max: 0.493 (optimal threshold=0.32) | S_min: 33.050 | AUPR: 0.426
 - **CCO** | F_max: 0.722 (optimal threshold=0.33) | S_min: 7.138 | AUPR: 0.728
+
+Stacked ensemble with just 4 components **(no FC-on-embeddings nor GNN)**, using **ESM2 15B** sequence embeddings:
+- **MFO** | F_max: 0.591 (optimal threshold=0.18) | S_min: 8.617 | AUPR: 0.537
+- **BPO** | F_max: 0.493 (optimal threshold=0.31) | S_min: 32.820 | AUPR: 0.434
+- **CCO** | F_max: 0.718 (optimal threshold=0.32) | S_min: 7.198 | AUPR: 0.737
 
 ## Notes for paper writing
 

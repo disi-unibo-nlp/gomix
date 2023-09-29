@@ -34,7 +34,7 @@ PPI_FILE_PATH = os.path.join(TASK_DATASET_PATH, 'all_proteins_STRING_interaction
 
 CHECKPOINTS_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../../data/temp_cache/model_checkpoints')
 
-USE_GNN_COMPONENT = True  # For now, including the GNN component has low performance gain.
+USE_GNN_COMPONENT = False  # At the moment, including the GNN component doesn't improve the performance.
 
 
 """
