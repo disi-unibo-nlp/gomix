@@ -27,7 +27,7 @@ The .pkl files are pickle files containing a pandas dataframe.
 
 ### NetGO2 dataset
 
-Taken from [DeepGOZero](https://academic.oup.com/bioinformatics/article/38/Supplement_1/i238/6617515). Our train is their train+valid, and the testing set is the same as testing set in both DeepGOZero and NetGO2 papers.
+Taken from [DeepGOZero](https://academic.oup.com/bioinformatics/article/38/Supplement_1/i238/6617515). Our train is their train+valid, and the testing set is the same as testing set in both DeepGOZero and NetGO2 papers. Currently, the `data/processed/task_datasets/NetGO2/all_proteins.fasta` file is incomplete because not all proteins in the dataset were found by the Uniprot mapping tool. This may be fixable if we find some other source.
 
 ## Methods
 
