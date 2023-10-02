@@ -25,6 +25,10 @@ This same dataset is also used by other good-performing papers:
 
 The .pkl files are pickle files containing a pandas dataframe.
 
+### NetGO2 dataset
+
+Taken from [DeepGOZero](https://academic.oup.com/bioinformatics/article/38/Supplement_1/i238/6617515). Our train is their train+valid, and the testing set is the same as testing set in both DeepGOZero and NetGO2 papers.
+
 ## Methods
 
 To encode proteins, we'll sometimes use **ESM2**, a protein language model by Facebook. It first embeds amino acids, then you may take the average between them as the protein embedding.

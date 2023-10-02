@@ -4,12 +4,14 @@ import pandas as pd
 import subprocess
 import tempfile
 
+"""
+Example usage:
 
+python src/data_processing/04_generate_all_proteins_diamond.py \
+--all-proteins-fasta-file data/processed/task_datasets/2016/all_proteins.fasta \
+--out-file data/processed/task_datasets/2016/all_proteins_diamond.res
+"""
 def main():
-    """
-    Example usage:
-    python src/data_processing/04_generate_all_proteins_diamond.py --all-proteins-fasta-file data/processed/task_datasets/2016/all_proteins.fasta --out-file data/processed/task_datasets/2016/all_proteins_diamond.res
-    """
     parser = argparse.ArgumentParser()
     parser.add_argument('--all-proteins-fasta-file')
     parser.add_argument('--out-file')

@@ -18,7 +18,7 @@ def main():
     train_annotations_file_path = os.path.join(TASK_DATASET_PATH, 'propagated_annotations', 'train.json')
     test_annotations_file_path = os.path.join(TASK_DATASET_PATH, 'annotations', 'test.json')
     gene_ontology_file_path = os.path.join(TASK_DATASET_PATH, 'go.obo')
-    diamond_scores_file_path = os.path.join(TASK_DATASET_PATH, 'test_diamond.res')
+    diamond_scores_file_path = os.path.join(TASK_DATASET_PATH, 'all_proteins_diamond.res')
 
     with open(train_annotations_file_path, 'r') as f:
         train_annotations = json.load(f)  # dict: prot ID -> list of GO terms

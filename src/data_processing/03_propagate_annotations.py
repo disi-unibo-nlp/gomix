@@ -4,7 +4,7 @@ import argparse
 import json
 import glob
 sys.path.append(str(Path(__file__).resolve().parents[2]))
-from src.utils.GeneOntologyDAG import GeneOntologyDAG
+from src.utils.predictions_evaluation.deepgoplus_evaluator.GeneOntology import GeneOntology
 import os
 
 
@@ -15,7 +15,7 @@ def main():
     parser.add_argument("gene_ontology_file_path", help="Path to gene ontology file")
     args = parser.parse_args()
 
-    gene_ontology = GeneOntologyDAG(args.gene_ontology_file_path)
+    gene_ontology = GeneOntology(args.gene_ontology_file_path, with_rels=True)
 
     # Loop over each JSON file in the directory
     for annotations_file_path in glob.glob(os.path.join(args.annotations_dir, "*.json")):
@@ -26,7 +26,7 @@ def main():
             new_go_terms = set()
             for go_term in go_terms:
                 new_go_terms.add(go_term)
-                new_go_terms = new_go_terms.union(gene_ontology.get_ancestors_ids(go_term))
+                new_go_terms = new_go_terms.union(gene_ontology.get_ancestors(go_term))
             prot_to_go_terms[prot] = list(new_go_terms)
 
         output_file_path = os.path.join(args.output_dir, os.path.basename(annotations_file_path))
