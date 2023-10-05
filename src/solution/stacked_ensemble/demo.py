@@ -34,7 +34,7 @@ PPI_FILE_PATH = os.path.join(TASK_DATASET_PATH, 'all_proteins_STRING_interaction
 
 CHECKPOINTS_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../../data/temp_cache/model_checkpoints')
 
-USE_GNN_COMPONENT = False  # At the moment, including the GNN component doesn't improve the performance.
+USE_ALL_COMPONENTS = False  # When this is False, only the simpler base learners will be used.
 
 
 """
@@ -54,6 +54,7 @@ def main():
     with open(test_annotations_file_path, 'r') as f:
         test_annotations = json.load(f)  # dict: prot ID -> list of GO terms
 
+    print(f'USE_ALL_COMPONENTS is set to {USE_ALL_COMPONENTS}. This means that the GNN and NN models will {"be" if USE_ALL_COMPONENTS else "NOT be"} used in the ensemble.')
     print('Train set | total proteins:', len(train_annotations), '| total GO terms:', len(set(chain.from_iterable(train_annotations.values()))))
     print('Test set | total proteins:', len(test_annotations), '| total GO terms:', len(set(chain.from_iterable(test_annotations.values()))))
 
@@ -143,10 +144,10 @@ def train_base_models_and_generate_level1_predictions(train_annotations: dict, t
     interactionscore_learner = InteractionScoreLearner(train_annotations, PPI_FILE_PATH)
     embeddingsimilarityscore_learner = EmbeddingSimilarityScoreLearner(train_annotations=train_annotations, prot_embedding_loader=ProteinEmbeddingLoader(EMBEDDING_TYPES_FOR_EMBEDDING_SIMILARITY_SCORE))
 
-    # The trained models will be saved to disk, so that they can be re-used later in this function.
-    # Why not keeping them in memory? Because they're too big to keep them all in memory at once.
-    go_term_to_nn_output_index, = train_neural_fc_on_embeddings(train_annotations)
-    if USE_GNN_COMPONENT:
+    if USE_ALL_COMPONENTS:
+        # The trained models will be saved to disk, so that they can be re-used later in this function.
+        # Why not keeping them in memory? Because they're too big to keep them all in memory at once.
+        go_term_to_nn_output_index, = train_neural_fc_on_embeddings(train_annotations)
         graph, graph_ctx = train_gnn_model_with_annotations(train_annotations)
 
     """
@@ -160,14 +161,14 @@ def train_base_models_and_generate_level1_predictions(train_annotations: dict, t
         {prot_id: [(go_term, score) for go_term, score in embeddingsimilarityscore_learner.predict(prot_id).items()] for prot_id in target_prot_ids},
     ]
 
-    nn_model = make_fc_on_embeddings_model(go_term_to_nn_output_index)
-    load_checkpoint(model=nn_model, model_name='fc_on_embeddings')
-    predictions.append(
-        predict_with_nn_model_and_transform_preds_to_dict(model=nn_model, prot_ids=target_prot_ids, go_term_to_index=go_term_to_nn_output_index)
-    )
-    del nn_model
+    if USE_ALL_COMPONENTS:
+        nn_model = make_fc_on_embeddings_model(go_term_to_nn_output_index)
+        load_checkpoint(model=nn_model, model_name='fc_on_embeddings')
+        predictions.append(
+            predict_with_nn_model_and_transform_preds_to_dict(model=nn_model, prot_ids=target_prot_ids, go_term_to_index=go_term_to_nn_output_index)
+        )
+        del nn_model
 
-    if USE_GNN_COMPONENT:
         gnn_model = make_gnn_model(graph_ctx=graph_ctx)
         load_checkpoint(model=gnn_model, model_name='gnn')
         predictions.append(
