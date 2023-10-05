@@ -91,7 +91,7 @@ Stacked ensemble with just 4 components **(no FC-on-embeddings nor GNN)**, using
 - **BPO** | F_max: 0.493 (optimal threshold=0.31) | S_min: 32.820 | AUPR: 0.434
 - **CCO** | F_max: 0.718 (optimal threshold=0.32) | S_min: 7.198 | AUPR: 0.737
 
-## How to run the solution
+## How to run the solution
 
 Since the solution is an ensemble method, there are multiple components to it. Each one of these base models can be run independently, to measure its performance. Provided that the `data` directory already contains all the necessary files (described in the sections above), you can run the experiments using the following commands:
 
