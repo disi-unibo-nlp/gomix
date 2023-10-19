@@ -9,12 +9,12 @@ import numpy as np
 import sys
 from typing import List
 from pathlib import Path
+import random
 sys.path.append(str(Path(__file__).resolve().parents[4]))
 from src.solution.components.FC_on_embeddings.ProteinToGOModel import ProteinToGOModel
 from src.utils.EmbeddedProteinsDataset import EmbeddedProteinsDataset
 from src.utils.predictions_evaluation.evaluate import evaluate_with_deepgoplus_evaluator
 from src.utils.ProteinEmbeddingLoader import ProteinEmbeddingLoader
-torch.manual_seed(0)
 
 TASK_DATASET_PATH = os.environ["TASK_DATASET_PATH"]
 assert TASK_DATASET_PATH, 'Environment variable \'TASK_DATASET_PATH\' must be declared.'
@@ -29,6 +29,9 @@ PROT_EMBEDDING_LOADER = ProteinEmbeddingLoader()
 
 
 def main():
+    random.seed(0)
+    torch.manual_seed(0)
+
     train_dataset = _make_training_dataset()
 
     model = make_and_train_model_on(train_dataset)
@@ -51,7 +54,8 @@ def make_and_train_model_on(dataset) -> ProteinToGOModel:
 
     best_val_f_max = -np.inf
     best_epoch = 0
-    for epoch in range(1, 81):
+    MAX_EPOCHS = 11
+    for epoch in range(1, MAX_EPOCHS+1):
         print(f"Epoch {epoch}: Learning rate = {optimizer.param_groups[0]['lr']}")
         model.train()
         train_loss = 0.0

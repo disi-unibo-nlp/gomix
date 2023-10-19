@@ -100,7 +100,7 @@ Since the solution is an ensemble method, there are multiple components to it. E
 - InteractionScore: `TASK_DATASET_PATH=data/processed/task_datasets/2016 python src/solution/components/interactionscore/demo.py`
 - EmbeddingSimilarityScore: `TASK_DATASET_PATH=data/processed/task_datasets/2016 python src/solution/components/embeddingsimilarityscore/main.py`
 - FC on embeddings: `TASK_DATASET_PATH=data/processed/task_datasets/2016 python src/solution/components/FC_on_embeddings/main.py`
-- FC on embeddings: `TASK_DATASET_PATH=data/processed/task_datasets/2016 python src/solution/components/GNN_on_PPI_with_embeddings/main.py`
+- GNN on PPI & embeddings: `TASK_DATASET_PATH=data/processed/task_datasets/2016 python src/solution/components/GNN_on_PPI_with_embeddings/main.py`
 - **Ensemble method**: `TASK_DATASET_PATH=data/processed/task_datasets/2016 python src/solution/stacked_ensemble/demo.py`
 
 By default, the ensemble method only includes 4 of the 6 base models. To include all, toggle the `USE_ALL_COMPONENTS` boolean variable in `src/solution/stacked_ensemble/demo.py`.

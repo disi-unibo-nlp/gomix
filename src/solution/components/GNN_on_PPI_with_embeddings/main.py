@@ -79,8 +79,8 @@ def build_whole_graph_from_scratch(train_annotations: dict) -> tuple:
 
 def make_and_train_model_on(graph: GeometricData, graph_ctx: dict) -> Net:
     train_mask, val_mask = _make_train_val_masks(graph, graph_ctx)
-    train_loader = NeighborLoader(graph, num_neighbors=[8, 4], batch_size=32, input_nodes=train_mask)
-    val_loader = NeighborLoader(graph, num_neighbors=[8, 4], batch_size=64, input_nodes=val_mask)
+    train_loader = NeighborLoader(graph, num_neighbors=[4, 2], batch_size=10, input_nodes=train_mask)
+    val_loader = NeighborLoader(graph, num_neighbors=[4, 2], batch_size=20, input_nodes=val_mask)
 
     print('Train-val split: {} - {}'.format(train_mask.sum(), val_mask.sum()))
 
@@ -93,7 +93,8 @@ def make_and_train_model_on(graph: GeometricData, graph_ctx: dict) -> Net:
     print('Training...')
     best_val_f_max = -np.inf
     best_epoch = 0
-    for epoch in range(1, 81):
+    MAX_EPOCHS = 13
+    for epoch in range(1, MAX_EPOCHS+1):
         print(f"Epoch {epoch}: lr={optimizer.param_groups[0]['lr']}")
         model.train()
 
